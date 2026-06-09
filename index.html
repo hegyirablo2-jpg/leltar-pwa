@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leltár2 - Vonalkódos Leltározó</title>
+  
+  <!-- Manifest for PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- html5-qrcode library for barcode scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- App Container -->
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">📊</span>
+        <h1>Leltár2</h1>
+      </div>
+      <div id="connection-status" class="status-badge status-online">Helyi mód</div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-content">
+      
+      <!-- View 1: Scan and Input View -->
+      <section id="scan-view" class="view-section active">
+        
+        <!-- Scanner Area -->
+        <div class="scanner-card">
+          <div class="scanner-header">
+            <h3>Kamera olvasó</h3>
+            <button id="toggle-camera-btn" class="btn btn-secondary btn-sm">Kamera indítása</button>
+          </div>
+          
+          <div id="reader-container">
+            <div id="reader"></div>
+            <div id="reader-fallback" class="fallback-message hidden">
+              <span class="fallback-icon">⚠️</span>
+              <p>A kamera nem elérhető vagy nincs engedélyezve.</p>
+              <p class="fallback-sub">Használd a kézi adatbevitelt alább.</p>
+            </div>
+          </div>
+
+          <div class="scanner-status" id="scan-instruction">
+            Olvassa be a raktárhely vonalkódját...
+          </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="form-card">
+          <div class="form-header">
+            <h3>Adatbevitel</h3>
+            <label class="toggle-switch">
+              <input type="checkbox" id="manual-mode-checkbox">
+              <span class="slider"></span>
+              <span class="toggle-label">Kézi bevitel</span>
+            </label>
+          </div>
+          
+          <form id="scan-form" autocomplete="off">
+            <div class="form-group">
+              <label for="location-code">Raktárhely</label>
+              <div class="input-with-button">
+                <input type="text" id="location-code" class="form-control" placeholder="Raktárhely kódja" readonly required>
+                <button type="button" id="clear-location-btn" class="btn btn-icon" title="Raktárhely törlése">✕</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="item-code">Termékkód</label>
+              <div class="input-with-button">
+                <input type="text" id="item-code" class="form-control" placeholder="Termék kódja" readonly required>
+                <button type="button" id="clear-item-btn" class="btn btn-icon" title="Termékkód törlése">✕</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="quantity">Mennyiség</label>
+              <input type="number" id="quantity" class="form-control" placeholder="0.00" step="any" inputmode="decimal" required>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="reset-scans-btn" class="btn btn-danger">Új olvasás / Törlés</button>
+              <button type="submit" id="save-btn" class="btn btn-primary">Mentés</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- View 2: List View -->
+      <section id="list-view" class="view-section">
+        <div class="list-card">
+          <div class="list-header">
+            <h3>Leltározott tételek</h3>
+            <div class="list-stats">
+              <span id="total-scans-badge">0 db tétel</span>
+              <span id="total-qty-badge">Össz: 0</span>
+            </div>
+          </div>
+          
+          <!-- Scans List -->
+          <div id="scans-list" class="scans-list">
+            <!-- Dynamically populated -->
+            <div class="empty-list-message">
+              <span class="empty-icon">📝</span>
+              <p>Még nincs rögzített tétel.</p>
+              <p class="empty-sub">Kezd el a szkennelést az "Olvasás" menüpontban!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="app-nav">
+      <button id="nav-scan" class="nav-item active">
+        <span class="nav-icon">📷</span>
+        <span class="nav-text">Olvasás</span>
+      </button>
+      <button id="nav-list" class="nav-item">
+        <span class="nav-icon">📋</span>
+        <span class="nav-text">Lista</span>
+      </button>
+    </nav>
+    
+    <!-- Edit Quantity Modal -->
+    <div id="edit-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Mennyiség módosítása</h3>
+          <button id="modal-close-btn" class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-info">
+            <p><strong>Raktárhely:</strong> <span id="modal-info-location">-</span></p>
+            <p><strong>Termékkód:</strong> <span id="modal-info-item">-</span></p>
+          </div>
+          <form id="modal-form" autocomplete="off">
+            <input type="hidden" id="modal-scan-id">
+            <div class="form-group">
+              <label for="modal-quantity">Új mennyiség</label>
+              <input type="number" id="modal-quantity" class="form-control" placeholder="0.00" step="any" inputmode="decimal" required>
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="modal-cancel-btn" class="btn btn-secondary">Mégse</button>
+              <button type="submit" class="btn btn-primary">Mentés</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+</html>
