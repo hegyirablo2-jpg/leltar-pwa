@@ -1,5 +1,5 @@
 // --- CONFIGURATION & GLOBAL STATE ---
-const APP_VERSION = '1.02';
+const APP_VERSION = '1.04';
 const DB_NAME = 'InventoryDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'scans';
@@ -179,10 +179,9 @@ function startCamera() {
   const config = {
     fps: 10,
     qrbox: (width, height) => {
-      // Maximalizált keret: a lehető legnagyobbra növeljük a kameraképen belül
-      // (barcode jelleghez igazítva a magasságot kismértékben kisebbre hagyjuk)
-      const boxWidth = Math.min(width, height) * 0.97;
-      const boxHeight = boxWidth * 0.62;
+      // Maximalizált keret: a beolvasó ablak teljes szélességét (98%) és magasságát (95%) kihasználjuk
+      const boxWidth = width * 0.98;
+      const boxHeight = height * 0.95;
       return { width: boxWidth, height: boxHeight };
     }
   };
@@ -411,6 +410,13 @@ function switchView(viewName) {
     listView.classList.add('active');
     navScan.classList.remove('active');
     navList.classList.add('active');
+    
+    // Set date filter to today's date if empty
+    const dateFilterEl = document.getElementById('list-date-filter');
+    if (dateFilterEl && !dateFilterEl.value) {
+      dateFilterEl.value = getLocalDateString();
+    }
+    
     renderScansList();
   }
 }
@@ -427,21 +433,39 @@ function formatDateTime(timestamp) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 }
 
+// Get Local Date String YYYY-MM-DD
+function getLocalDateString(timestamp = Date.now()) {
+  const date = new Date(timestamp);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 // Load database items and render
 async function renderScansList() {
   const scansListContainer = document.getElementById('scans-list');
   const totalScansBadge = document.getElementById('total-scans-badge');
   const totalQtyBadge = document.getElementById('total-qty-badge');
+  
+  const dateFilterEl = document.getElementById('list-date-filter');
+  const selectedDate = dateFilterEl ? dateFilterEl.value : getLocalDateString();
 
   try {
     const scans = await getAllScansFromDB();
     
-    if (scans.length === 0) {
+    // Filter scans matching selectedDate
+    const filteredScans = scans.filter(scan => {
+      const scanDate = scan.date || getLocalDateString(scan.timestamp);
+      return scanDate === selectedDate;
+    });
+    
+    if (filteredScans.length === 0) {
       scansListContainer.innerHTML = `
         <div class="empty-list-message">
           <span class="empty-icon">📝</span>
-          <p>Még nincs rögzített tétel.</p>
-          <p class="empty-sub">Kezd el a szkennelést az "Olvasás" menüpontban!</p>
+          <p>Még nincs rögzített tétel ezen a napon.</p>
+          <p class="empty-sub">Válassz másik dátumot, vagy kezdj el szkennelni az "Olvasás" menüben!</p>
         </div>
       `;
       totalScansBadge.textContent = '0 db tétel';
@@ -452,7 +476,7 @@ async function renderScansList() {
     let totalQty = 0;
     let htmlContent = '';
 
-    scans.forEach((scan) => {
+    filteredScans.forEach((scan) => {
       totalQty += scan.quantity;
       
       htmlContent += `
@@ -477,7 +501,7 @@ async function renderScansList() {
     });
 
     scansListContainer.innerHTML = htmlContent;
-    totalScansBadge.textContent = `${scans.length} db tétel`;
+    totalScansBadge.textContent = `${filteredScans.length} db tétel`;
     totalQtyBadge.textContent = `Össz: ${Number(totalQty.toFixed(4))}`;
   } catch (error) {
     console.error(error);
@@ -624,6 +648,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('nav-scan').addEventListener('click', () => switchView('scan'));
   document.getElementById('nav-list').addEventListener('click', () => switchView('list'));
 
+  // Date Filter Change Listener
+  document.getElementById('list-date-filter').addEventListener('change', () => {
+    renderScansList();
+  });
+
   // 3. Camera Toggle Button
   document.getElementById('toggle-camera-btn').addEventListener('click', () => {
     if (isCameraRunning) {
@@ -694,12 +723,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    const timestamp = Date.now();
     const scanRecord = {
       warehouseCode,
       locationCode: currentLocation,
       itemCode: currentItem,
       quantity,
-      timestamp: Date.now(),
+      timestamp: timestamp,
+      date: getLocalDateString(timestamp),
       isSynced: false
     };
 

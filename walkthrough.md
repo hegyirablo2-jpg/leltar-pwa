@@ -1,43 +1,27 @@
-# Fejlesztési Walkthrough - Leltározás (Módosított Fázis 1)
+# Fejlesztési Walkthrough - Leltározás (Módosított Fázis 1 - v1.04)
 
-Az alkalmazást átneveztük **Leltározás**-ra, bevezettük a kódból állítható verziókezelést (jelenlegi verzió: **v1.02**), és átterveztük a grafikus felületet (GUI) nagyobb betűméretekkel és tapadási felületekkel a kis mobilképernyőkön való kényelmes használathoz.
+Az alkalmazás neve **Leltározás**, a jelenlegi verzió: **v1.04**. Ebben a frissítésben optimalizáltuk a kamera szkennelési keretének méretezését.
 
 ---
 
-## Főbb Változtatások a v1.02-es Verzióban
+## Főbb Változtatások a v1.04-es Verzióban
 
-1. **Alkalmazás Átnevezése és Verziókezelése:**
-   - A projekt neve hivatalosan **Leltározás** lett.
-   - Az `app.js` elején található `const APP_VERSION = '1.02';` konstans segítségével a verziószám egyetlen helyen állítható a kódban.
-   - A verziószám automatikusan beillesztésre kerül a fejlécbe és a böngésző fül címébe indításkor.
-   - A `manifest.json` és a `service-worker.js` cache-elési azonosítója is frissült a `v1.02` verziónak megfelelően.
+1. **Valódi Maximális Szkennelő Keret:**
+   - **Probléma:** Korábban a leolvasó keret (qrbox) a `Math.min(width, height)` képletet használta, ami a beolvasó ablak magasságára (ami kisebb, mint a szélessége) korlátozta a keret szélességét is. Emiatt a keret a széleken nagy sötét sávot hagyott és kicsinek tűnt.
+   - **Megoldás:** A `html5-qrcode` konfigurációjában a `qrbox` méretét közvetlenül a videókeret valós szélességére (width * 0.98) és magasságára (height * 0.95) méreteztük át. 
+   - **Eredmény:** A fehéren világító célzó sarkok és a beolvasási zóna most már valóban kitágult a kamera ablak széleihez (a szélesség **98%**-át, és a magasság **95%**-át elfoglalva), így a szkennelés maximális méretűvé vált.
 
-2. **Mobilbarát GUI (Nagyobb betűméretek és gombok):**
-   - **Taller Inputs & Buttons:** A gombok és beviteli mezők magasságát fixen **54px**-re növeltük. Ez megkönnyíti a gyors érintést (tap target) a telefonokon, kiküszöbölve a félrenyomásokat.
-   - **Scaled Typography:** Az összes szöveges elem betűméretét megemeltük:
-     - Input mezők betűmérete: `1.15rem` (~18px).
-     - Gombok betűmérete: `1.1rem` (~17px).
-     - Megerősítendő kódok kiemelése a modálokban: `1.6rem` bold (~25px).
-     - Kamera alatti utasítások: `1.05rem` (~16px), félkövér, kontrasztos fehér színben.
-   - **Expanded Bottom Bars:** Az alsó navigációs sáv magasságát **80px**-re növeltük, így az ikonok (`1.5rem`) and a feliratok is nagyobbak lettek. Az alsó státuszsáv magasságát és betűméretét szintén megemeltük.
-   - **Optimized Aspect Ratio:** A kamera detektáló keretének mérete (`85%` szélesség, `55%` magasság) továbbra is ideális a lineáris vonalkódok beolvasásához.
-
-3. **Megbízható Frissülés és Fejlesztés:**
-   - A [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat) segítségével indított helyi szerver teljesen kikapcsolja a gyorsítótárazást, így azonnal láthatóak a kódváltoztatások.
-   - A **Network-First** Service Worker és az **Auto-Update** modulnak köszönhetően a telefon és az asztali böngésző azonnal észleli, ha új verziót (pl. egy újabb push-t) töltesz fel a GitHub Pages-re, letölti a fájlokat, és **automatikusan újratölti az oldalt**, így azonnal a frissített felület jelenik meg.
+2. **Verziókezelés szinkronizálása:**
+   - A `v1.04` verzió bekerült az `app.js` konstansba, a `manifest.json`-be és a `service-worker.js`-be (`leltarozas-cache-v1.04` gyorsítótár névvel).
 
 ---
 
 ## Útmutató: Alkalmazás Frissítése GitHub Pages Segítségével
 
-Amikor új verziót push-olsz, az alábbi folyamat játszódik le:
-
-1. **Push Git-be:**
-   Futtasd a parancsokat a helyi mappában a `v1.02`-es kódok feltöltéséhez:
-   ```bash
-   git add .
-   git commit -m "Upgrade to Leltározás v1.02 with larger GUI"
-   git push origin main
-   ```
-2. **Szerveroldali frissülés:** A GitHub Pages 30-60 másodpercen belül frissíti a tárhelyet a háttérben.
-3. **Automatikus kliens frissülés:** A telefonodon vagy böngészőben megnyitott alkalmazás a háttérben azonnal észleli a `v1.02` verzióváltozást a Service Workeren keresztül, letölti a megváltozott stíluslapot és szkripteket, majd **magától újratölti az oldalt**, aktiválva a megnövelt méretű új felületet.
+Futtasd a parancsokat a helyi mappában a `v1.04`-es kódok feltöltéséhez:
+```bash
+git add .
+git commit -m "Upgrade to Leltározás v1.04 with maximized camera frame"
+git push origin main
+```
+A feltolás után a GitHub Pages háttérben frissül (~1 perc), majd a megnyitott alkalmazás a háttérben azonnal észleli a `v1.04` verziót és **magától újratölti az oldalt**, így a megnövelt méretű új keret azonnal aktívvá válik!

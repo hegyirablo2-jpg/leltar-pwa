@@ -1,8 +1,10 @@
-# Feladatok - Átnevezés, verzió és GUI nagyítás
+# Feladatok - Dátum csoportosítás, lista szűrés és nagyobb szkennelő ablak
 
-- [x] Frissíteni az `index.html`-t (átnevezés Leltározásra, verziószám tároló `#app-version` elem hozzáadása a fejlécbe)
-- [x] Frissíteni a `styles.css`-t (betűméretek, magasságok, gombok és beviteli mezők skálázása a jobb mobil olvashatóságért)
-- [x] Frissíteni az `app.js`-t (verzió konstans definiálása és dinamikus beillesztése a felületre és dokumentum címbe)
-- [x] Frissíteni a `manifest.json` és `service-worker.js` fájlokat (PWA átnevezés és cache név `v1.02` verzióra)
+- [x] Módosítani az `index.html`-t (dátumválasztó bevitelem hozzáadása a lista nézet fejlécébe)
+- [x] Módosítani az `app.js`-t
+    - [x] `getLocalDateString(timestamp)` bevezetése és rögzítéskor a `date` mentése az adatbázisba
+    - [x] Lista nézet betöltésekor szűrés a dátumválasztó értéke alapján
+    - [x] Dátumválasztó alapértelmezett beállítása a mai napra és eseménykezelő hozzáadása
+    - [x] Kamera `qrbox` méret növelése maximálisra (szélesség 95%)
 - [x] Frissíteni a `walkthrough.md` dokumentációt
 - [x] Működés verifikálása
