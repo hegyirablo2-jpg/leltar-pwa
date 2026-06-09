@@ -5,11 +5,12 @@
   --bg-secondary: #1e293b;
   --bg-tertiary: #0b0f19;
   --card-bg: rgba(30, 41, 59, 0.7);
-  --card-border: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.06);
+
   
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #a7b7d1;
+  --text-muted: #6b7a99;
   
   --primary: #10b981; /* Emerald green */
   --primary-hover: #059669;
@@ -95,7 +96,7 @@ body {
 }
 
 .app-header h1 {
-  font-size: 1.25rem;
+  font-size: 1.55rem;
   font-weight: 700;
   background: linear-gradient(135deg, #34d399, #10b981);
   -webkit-background-clip: text;
@@ -103,7 +104,7 @@ body {
 }
 
 .status-badge {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 9999px;
@@ -206,7 +207,7 @@ body {
 }
 
 .scanner-header h3, .list-header h3 {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
@@ -451,7 +452,7 @@ body {
 }
 
 .btn-sm {
-  padding: 6px 12px;
+  padding: 8px 12px;
   font-size: 0.8rem;
   border-radius: var(--border-radius-sm);
 }
@@ -462,7 +463,7 @@ body {
   background-color: rgba(15, 23, 42, 0.95);
   border-top: 1px solid var(--card-border);
   padding: 10px 20px;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   text-align: center;
   z-index: 9;
@@ -518,7 +519,7 @@ body {
 }
 
 .nav-text {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
@@ -532,7 +533,7 @@ body {
 
 /* Progress Card (Current Scan status details) */
 .progress-card h3 {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -557,13 +558,13 @@ body {
 }
 
 .progress-label {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .progress-value {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   font-family: monospace;
   color: var(--accent);
@@ -578,7 +579,7 @@ body {
 
 /* List View styles */
 .list-stats {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-secondary);
   display: flex;
@@ -639,7 +640,7 @@ body {
 }
 
 .scan-loc {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--accent);
   background-color: rgba(59, 130, 246, 0.1);
@@ -651,14 +652,14 @@ body {
 }
 
 .scan-code {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   font-family: monospace;
 }
 
 .scan-time {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -669,7 +670,7 @@ body {
 }
 
 .scan-qty {
-  font-size: 1.25rem;
+  font-size: 1.45rem;
   font-weight: 700;
   color: var(--primary);
   text-align: right;
