@@ -1,64 +1,34 @@
-# Vonalkódos Leltározó Alkalmazás (Módosítási Terv)
+# Gyorsítótárazás és Helyi Szerver Megbízhatóságának Javítása
 
-Az alkalmazás munkafolyamatát átalakítjuk a felhasználó kérése alapján: a raktár kódját csak egyszer kell megadni indításkor, a beolvasásokat megerősítő ablakok kísérik, a mennyiséget egy külön modal kéri be, a szkennelő keret nagyobb lesz, és a képernyő alján egy státuszsor mutatja a rögzített tételek számát.
+A PWA (Progressive Web App) Service Worker cache-first stratégiája miatt a böngészők makacsul tárolták a régi fájlokat (HTML, CSS, JS), így sem a helyi szerver, sem a GitHub Pages módosításai nem jelentek meg azonnal.
 
-## User Review Required
-
-> [!IMPORTANT]
-> **Munkafolyamat változások:**
-> 1. **Raktár kód:** Indításkor kötelező beolvasni. Sikeres megerősítés után fixen kikerül a képernyő tetejére. Oldal újratöltésekor (újraindításkor) újra be kell olvasni.
-> 2. **Iteratív beolvasás:**
->    - **Lépés 1 (Raktárhely):** Szkennelés -> Megerősítő ablak (Oké / Mégse). Ha Oké, jön a Lépés 2.
->    - **Lépés 2 (Cikkszám):** Szkennelés -> Megerősítő ablak (Oké / Mégse). Ha Oké, jön a Lépés 3.
->    - **Lépés 3 (Mennyiség):** Egy felugró modal megmutatja a beolvasott raktárhelyet és cikkszámot, majd bekéri a mennyiséget. "OK" gombra ment IndexedDB-be, majd visszaugrik a Lépés 1-re (új raktárhely beolvasása).
-> 3. **Detektáló keret (qrbox):** A kamera ablakban a leolvasó keret méretét megnöveljük (szélesség 80%-a), hogy könnyebb legyen a célzás.
+A probléma végleges és megbízható megoldására az alábbi változtatásokat vezetjük be.
 
 ## Proposed Changes
 
-### [MODIFY] [index.html](file:///d:/dev/BC/Leltar2/index.html)
-- Tetejére egy fix fejléc sáv beillesztése a Raktár kód megjelenítéséhez (`#warehouse-display-bar`).
-- A megerősítő ablakokhoz egy univerzális megerősítő modal (`#confirm-modal`) létrehozása (Oké / Mégse gombokkal).
-- A mennyiség bekérő modal (`#quantity-modal`) átalakítása, hogy a megerősített raktárhelyet és cikkszámot is megjelenítse.
-- Alsó státuszsáv (`#status-bar`) hozzáadása, amely az IndexedDB-ben rögzített összes tétel darabszámát mutatja.
+### 1. Új Helyi Szerver Indító [NEW] [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat)
+- Létrehozunk egy egyszerűen kattintható Windows parancsfájlt a projekt gyökerében.
+- A szervert az `npx http-server -c-1 -p 8080` paranccsal indítja. A `-c-1` kapcsoló teljesen letiltja a HTTP gyorsítótárazást (Cache-Control: no-cache), így a böngésző minden helyi kódváltoztatást azonnal letölt.
 
-### [MODIFY] [styles.css](file:///d:/dev/BC/Leltar2/styles.css)
-- A fejléc alatti fix raktárkód kijelző stílusának megírása.
-- A kamera scanner keretének (`#reader` stílusok) és a detektáló zóna méretének növelése.
-- Az új alsó státuszsáv és a modálok vizuális finomítása (glassmorphism és jobb gombelrendezések).
+### 2. Caching Stratégia Módosítása [MODIFY] [service-worker.js](file:///d:/!dev/BC/Leltar2/service-worker.js)
+- Átállunk **Cache-First** stratégiáról **Network-First** (Hálózat-Első) stratégiára.
+- **Működése:** Ha van internet/hálózati kapcsolat, a böngésző mindig a legújabb fájlokat tölti le a szerverről (így a GitHub Pages frissítései azonnal látszódnak), és elmenti őket a cache-be. Ha nincs hálózat (offline), akkor a korábban mentett cache-ből tölt be.
+- Hozzáadunk egy `message` eseménykezelőt a `skipWaiting()` kényszerítésére, amikor új verzió érhető el.
 
-### [MODIFY] [app.js](file:///d:/dev/BC/Leltar2/app.js)
-- **Munkafolyamat állapotgép (State Machine) bevezetése:**
-  - Állapotok: `SCAN_WAREHOUSE`, `SCAN_LOCATION`, `SCAN_ITEM`, `ENTER_QUANTITY`.
-- **Raktár kód:** A beolvasott raktárkódot `sessionStorage`-ben tároljuk, így lapfrissítéskor (újraindításkor) törlődik és újra bekéri, de böngészés közben megmarad.
-- **Megerősítő logikák:**
-  - Sikeres beolvasáskor rezgés (Vibration API) és sípolás (Web Audio API).
-  - Megnyílik az egyedi modal a beolvasott értékkel (Raktár, Raktárhely vagy Cikkszám).
-  - "Mégse" gomb esetén a scanner újraindul és várja az új kódot.
-  - "Oké" gomb esetén az állapotgép a következő fázisba lép.
-- **Tételszám lekérdezés:** Minden mentés és törlés után frissíti a státuszsávban a tételek darabszámát.
-
-### [MODIFY] [walkthrough.md](file:///d:/dev/BC/Leltar2/walkthrough.md)
-- Frissítjük a PWA működési leírását.
-- Részletesen leírjuk a **GitHub Pages-en futó verzió frissítésének folyamatát**:
-  1. Helyi kód módosítása és mentése.
-  2. Git push végrehajtása.
-  3. GitHub Pages automatikus háttér-frissítésének megvárása (~1 perc).
-  4. A telefonon futó PWA frissítése (alkalmazás bezárása a háttérből/task managerből, majd újra megnyitása az új Service Worker aktiválásához).
+### 3. Automatikus Frissítés-Érzékelés [MODIFY] [app.js](file:///d:/!dev/BC/Leltar2/app.js)
+- A Service Worker regisztráció során figyeljük az `updatefound` eseményt.
+- Ha új Service Worker verziót észlel az alkalmazás, küldünk egy `skipWaiting` üzenetet a háttérnek.
+- A `controllerchange` esemény meghívásakor (amikor az új Service Worker átveszi az irányítást) **automatikusan újratöltjük az oldalt** (`window.location.reload()`). Így a felhasználónak nem kell bezárnia az appot, a frissítés azonnal és automatikusan végbemegy a háttérben.
 
 ## Verification Plan
 
-### Manuális Tesztelés
-1. **Indítás:** Belépéskor csak a raktárkód beolvasását engedi az app. Más kódokat figyelmen kívül hagy vagy hibát jelez.
-2. **Raktár rögzítés:** Raktárkód szkennelése -> rezgés -> megerősítő ablak.
-   - Ha *Mégse*: a raktárkód üres marad.
-   - Ha *Oké*: a fejlécben megjelenik a raktárkód, és átlépünk raktárhely olvasásra.
-3. **Raktárhely olvasás:** Raktárhely szkennelése -> rezgés -> megerősítő ablak.
-   - Ha *Mégse*: törli, újra szkennelhetünk.
-   - Ha *Oké*: elmenti ideiglenesen, átlépünk cikkszám olvasásra.
-4. **Cikkszám olvasás:** Cikkszám szkennelése -> rezgés -> megerősítő ablak.
-   - Ha *Mégse*: törli, újra szkennelhetünk.
-   - Ha *Oké*: megnyílik a mennyiség bekérő ablak.
-5. **Mennyiség:** A modal alján látható a raktárhely és a cikkszám.
-   - Mennyiség beírása -> OK -> sikeres mentés jelzés -> visszaáll a kiinduló raktárhely szkennelésre.
-   - Alsó státuszsáv frissül (tételek száma +1).
-6. **Frissítés teszt:** Git push után a PWA bezárása a telefonon, majd újraindítás után az új verzió és dizájn sikeresen megjelenik-e.
+### Helyi Szerver Teszt
+1. Elindítjuk az alkalmazást a `start-server.bat` fájllal.
+2. Megnyitjuk a `http://localhost:8080` oldalt.
+3. Végzünk egy apró szöveges módosítást az `index.html`-ben és elmentjük.
+4. Lefuttatunk egy sima frissítést (F5) a böngészőben. Ellenőrizzük, hogy a változás azonnal látható-e (a `-c-1` hatása).
+
+### GitHub Pages és Automatikus Frissülés Teszt
+1. Feltoljuk a módosításokat GitHubra.
+2. Visszalépünk az asztali böngészőbe.
+3. Amikor a GitHub Pages elkészül, a böngésző észleli a háttérben az új verziót, letölti azt, és automatikusan újratölti az oldalt az új funkciókkal.

@@ -1,58 +1,42 @@
 # Fejlesztési Walkthrough - Vonalkódos Leltározó App (Módosított Fázis 1)
 
-Az alkalmazás munkafolyamatát és megjelenését sikeresen átalakítottuk a kért specifikációknak megfelelően. 
+Az alkalmazás munkafolyamatát és PWA frissítési rendszerét átalakítottuk a megbízhatóbb működés érdekében.
 
 ---
 
-## Új Beolvasási Munkafolyamat és Állapotgép
+## 1. Megbízható Helyi Fejlesztői Szerver (`start-server.bat`)
 
-Az alkalmazás egy belső állapotgépet (State Machine) használ a beolvasások kezelésére:
-
-1. **Raktár kód beolvasása (Egyszeri teendő indításkor):**
-   - Az alkalmazás megnyitásakor csak a raktárkód beolvasását engedi.
-   - Sikeres beolvasáskor rezgéssel jelez és felugrik egy megerősítő ablak: **Raktár kód megerősítése (Oké / Mégse)**.
-   - Az **Oké** megnyomása után a raktárkód elmentődik a `sessionStorage`-ben (így az alkalmazás bezárásáig/újraindításáig megmarad), és fixen megjelenik a fejléc alatt: `Raktár: <kód>`.
-   - A raktárkód a fejléc melletti **Módosítás** gombbal bármikor megváltoztatható (ez törli a jelenlegi beolvasási folyamatot is).
-
-2. **Iteratív beolvasás (Raktárhely -> Cikkszám -> Mennyiség):**
-   - **Raktárhely beolvasása:** Leolvasás után megerősítő ablak ugrik fel. Ha elfogadod (**Oké**), az érték megjelenik az alsó státusz-kártyán, és átlépünk termékbeolvasásra.
-   - **Cikkszám beolvasása:** Leolvasás után megerősítő ablak ugrik fel. Ha elfogadod (**Oké**), az érték bekerül a státusz-kártyára, és automatikusan megnyílik a mennyiségbekérő ablak.
-   - **Mennyiség megadása:** A felugró ablakban látható a már megerősített Raktárhely és Cikkszám. A mennyiség beírása és az **OK** megnyomása után a tétel rögzítésre kerül a helyi IndexedDB-ben.
-   - **Mentés után:** A raktárhely és a cikkszám adatai törlődnek, és a rendszer automatikusan visszaugrik a *Raktárhely beolvasása* lépésre.
-   - **Mégse gombok:** Ha a cikkszám megerősítésekor vagy a mennyiség modalban a *Mégse* gombra kattintasz, a rendszer csak a cikkszámot dobja el (visszaugrik a Cikkszám beolvasására), így nem kell újra beolvasnod a raktárhelyet, ha ugyanott több terméket rögzítesz.
-
-3. **Nagyobb detektáló keret (Scanner):**
-   - A kamera ablakban a leolvasó keret méretét megnöveltük (szélesség 85%-a, magasság 55%-a), amely téglalap alakjával kifejezetten az ipari/vonalkódok gyorsabb beolvasását segíti.
-
-4. **Alsó Státuszsáv:**
-   - A képernyő legalsó részén, a menüsáv felett elhelyeztünk egy állandó státuszsávot, amely valós időben mutatja az IndexedDB-ben rögzített leltári tételek teljes darabszámát: `Beolvasott tételek száma: X db`.
+Létrehoztunk egy [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat) Windows indítófájlt a projekt gyökérkönyvtárában. 
+- **Működése:** A parancsfájl elindít egy helyi webszervert a háttérben az `npx http-server` segítségével a **8080**-as porton.
+- **Cache letiltása:** A szervert a `-c-1` kapcsolóval indítjuk el, ami **teljesen letiltja a HTTP gyorsítótárazást** (Cache-Control: no-cache). Ez garantálja, hogy ha módosítasz egy helyi fájlt (HTML, CSS vagy JS), a böngésző a lap frissítésekor (F5) azonnal az új verziót fogja betölteni.
+- **Használata:** Egyszerűen kattints duplán a `start-server.bat` fájlra a szerver elindításához.
 
 ---
 
-## Útmutató: Alkalmazás Frissítése GitHub Pages Segítségével
+## 2. Megbízható Frissülés GitHub Pages-en és Helyben (PWA Auto-Update)
 
-Amikor új verzió készül a kódból, azt az alábbi folyamattal tudod frissíteni a telefonodon:
+A PWA Service Worker korábbi "Cache-First" működése miatt a böngészők makacsul a régi, elmentett változatot jelenítették meg. Ennek elhárítására két szintű védelmet építettünk be:
 
-### 1. lépés: Módosítások feltöltése (Push)
-A helyi módosítások befejezése után futtasd az alábbi Git parancsokat a gépeden a frissítések feltolásához:
+### A. Network-First (Hálózat-Első) gyorsítótárazás
+A [service-worker.js](file:///d:/!dev/BC/Leltar2/service-worker.js) fájlt átírtuk **Network-First** működésűre.
+- Ha van internetkapcsolatod, a böngésző **mindig lekéri a legfrissebb kódokat a szerverről** (akár a helyi szerverről, akár a GitHub Pagesről), és a háttérben felülírja a korábbi mentéseket.
+- Ha nincs hálózat (offline vagy gyenge a térerő), az alkalmazás azonnal a helyben tárolt cache-ből tölt be, így az offline működés továbbra is 100%-os.
 
-```bash
-# Változások hozzáadása a stage-re
-git add .
+### B. Automatikus Frissítés-Érzékelés és Oldalújratöltés
+Az [app.js](file:///d:/!dev/BC/Leltar2/app.js) mostantól automatikusan figyeli, ha új verzió jelenik meg a szerveren:
+1. Ha új Service Worker verziót észlel (mert módosítottad a kódot és feltoltad GitHub-ra), az alkalmazás a háttérben letölti az új fájlokat.
+2. Amint a letöltés befejeződött, a kód kényszeríti az új verzió aktiválását (`skipWaiting`).
+3. Az új verzió aktívvá válásakor az alkalmazás **automatikusan újratölti az oldalt** a háttérben (`window.location.reload()`).
+4. **Eredmény:** Felhasználóként nem kell semmit sem tenned; ha új verziót feltöltesz, a böngésző/telefon magától frissül a legújabb változatra a háttérben!
 
-# Frissítési commit létrehozása
-git commit -m "Update app: new scanning workflow and modals"
+---
 
-# Feltöltés a GitHub-ra
-git push origin main
-```
+## 3. Beolvasási Munkafolyamat és Állapotgép
 
-### 2. lépés: Automatikus szerveroldali frissülés megvárása
-A `git push` után a GitHub Pages a háttérben automatikusan újraépíti a weboldalt. Ez általában **30-60 másodpercet** vesz igénybe. Ezután az új verzió már elérhető a HTTPS linken.
+Az alkalmazás az alábbi iteratív beolvasást követi:
 
-### 3. lépés: Az alkalmazás frissítése a telefonon (Service Worker frissítés)
-Mivel az alkalmazás egy PWA, amely a Service Worker segítségével offline tárolja a fájlokat, a telefon böngészője a háttérben ellenőrzi a frissítést:
-1. Ha megnyitod az alkalmazást, a Service Worker a háttérben észleli az új verziót és letölti azt.
-2. Az új verzió aktiválásához **be kell zárnod az alkalmazást a telefon futó alkalmazásai közül** (söpörd ki/zárd be a háttérből a task managerben).
-3. Nyisd meg újra az alkalmazást a telefon kezdőképernyőjéről.
-4. Az alkalmazás ekkor már az új, frissített fájlokkal fog elindulni. (Ha böngészőben teszteled, egy egyszerű lapfrissítés/F5 is elegendő).
+1. **Raktár kód beolvasása:** Első belépéskor a raktárkód beolvasása kötelező. Sikeres megerősítés után fixen kikerül a képernyő tetejére, és a `sessionStorage`-ben tárolódik (lap bezárásakor/újraindításakor törlődik).
+2. **Raktárhely beolvasása:** Megerősítő ablak kíséri. Elfogadás esetén továbbfejlődik a cikkszám beolvasásra.
+3. **Cikkszám beolvasása:** Megerősítő ablak kíséri. Elfogadás esetén megnyitja a mennyiség modal-t.
+4. **Mennyiség megadása:** A modalban látható a megerősített raktárhely és cikkszám. OK gombra ment az IndexedDB-be, majd a státusz-kártya törlődik és visszaugrik a Raktárhely beolvasására (új iteráció).
+5. **Alsó Státuszsáv:** Mutatja az adatbázisban tárolt összes rögzített tétel darabszámát.

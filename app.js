@@ -564,11 +564,37 @@ function escapeJs(str) {
 
 // --- EVENT LISTENERS & INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-  // Register Service Worker for PWA
+  // Register Service Worker for PWA with auto-update reload
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('Service Worker registered successfully.'))
+      .then((reg) => {
+        console.log('Service Worker registered successfully.');
+        
+        // Listen for new service worker installations
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // A new worker is available, skip waiting to activate it
+                console.log('New version found! Activating...');
+                installingWorker.postMessage('skipWaiting');
+              }
+            }
+          });
+        });
+      })
       .catch((err) => console.error('Service Worker registration error:', err));
+
+    // Reload the page when the active service worker changes to the new one
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        console.log('Controller changed. Reloading page for new version...');
+        window.location.reload();
+      }
+    });
   }
 
   // 1. Initialize IndexedDB and load counts
