@@ -187,10 +187,24 @@ body {
   padding-bottom: 145px; /* Spacious bottom padding for nav and status bar */
 }
 
+/* Manual controls should live at the bottom under the reader */
+.control-card-manual {
+  margin-top: auto;
+}
+
+.control-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+
 /* View Sections */
 .view-section {
   display: none;
   flex-direction: column;
+  min-height: 100%;
   gap: 16px;
   animation: fadeIn var(--transition-normal);
 }

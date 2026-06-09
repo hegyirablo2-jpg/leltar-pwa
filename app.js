@@ -1,5 +1,5 @@
 // --- CONFIGURATION & GLOBAL STATE ---
-const APP_VERSION = '1.04';
+const APP_VERSION = '1.05';
 const DB_NAME = 'InventoryDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'scans';
@@ -20,6 +20,7 @@ let currentState = STATES.SCAN_WAREHOUSE;
 let warehouseCode = null;
 let currentLocation = null;
 let currentItem = null;
+let isWarehouseLocked = false;
 
 // Modal Freeze Flag
 let isConfirming = false;
@@ -738,7 +739,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       await addScanToDB(scanRecord);
       triggerFeedback('success');
       closeQuantityModal(false); // successfully closed, not cancelled
-      resetScanCycle();          // reset location & item codes to start new loop
+      
+      const lockLocation = document.getElementById('lock-warehouse-checkbox').checked;
+      if (lockLocation) {
+        // Keep currentLocation, reset only currentItem
+        currentItem = null;
+        const progressItem = document.getElementById('progress-item');
+        progressItem.textContent = 'Nincs beolvasva';
+        progressItem.classList.add('empty');
+        lastScannedCode = null;
+        setTransitionState(STATES.SCAN_ITEM);
+      } else {
+        resetScanCycle();          // reset location & item codes to start new loop
+      }
+      
       updateStatusBarCount();    // update bottom status bar
     } catch (err) {
       alert(err);
