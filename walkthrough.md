@@ -1,42 +1,43 @@
-# Fejlesztési Walkthrough - Vonalkódos Leltározó App (Módosított Fázis 1)
+# Fejlesztési Walkthrough - Leltározás (Módosított Fázis 1)
 
-Az alkalmazás munkafolyamatát és PWA frissítési rendszerét átalakítottuk a megbízhatóbb működés érdekében.
-
----
-
-## 1. Megbízható Helyi Fejlesztői Szerver (`start-server.bat`)
-
-Létrehoztunk egy [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat) Windows indítófájlt a projekt gyökérkönyvtárában. 
-- **Működése:** A parancsfájl elindít egy helyi webszervert a háttérben az `npx http-server` segítségével a **8080**-as porton.
-- **Cache letiltása:** A szervert a `-c-1` kapcsolóval indítjuk el, ami **teljesen letiltja a HTTP gyorsítótárazást** (Cache-Control: no-cache). Ez garantálja, hogy ha módosítasz egy helyi fájlt (HTML, CSS vagy JS), a böngésző a lap frissítésekor (F5) azonnal az új verziót fogja betölteni.
-- **Használata:** Egyszerűen kattints duplán a `start-server.bat` fájlra a szerver elindításához.
+Az alkalmazást átneveztük **Leltározás**-ra, bevezettük a kódból állítható verziókezelést (jelenlegi verzió: **v1.02**), és átterveztük a grafikus felületet (GUI) nagyobb betűméretekkel és tapadási felületekkel a kis mobilképernyőkön való kényelmes használathoz.
 
 ---
 
-## 2. Megbízható Frissülés GitHub Pages-en és Helyben (PWA Auto-Update)
+## Főbb Változtatások a v1.02-es Verzióban
 
-A PWA Service Worker korábbi "Cache-First" működése miatt a böngészők makacsul a régi, elmentett változatot jelenítették meg. Ennek elhárítására két szintű védelmet építettünk be:
+1. **Alkalmazás Átnevezése és Verziókezelése:**
+   - A projekt neve hivatalosan **Leltározás** lett.
+   - Az `app.js` elején található `const APP_VERSION = '1.02';` konstans segítségével a verziószám egyetlen helyen állítható a kódban.
+   - A verziószám automatikusan beillesztésre kerül a fejlécbe és a böngésző fül címébe indításkor.
+   - A `manifest.json` és a `service-worker.js` cache-elési azonosítója is frissült a `v1.02` verziónak megfelelően.
 
-### A. Network-First (Hálózat-Első) gyorsítótárazás
-A [service-worker.js](file:///d:/!dev/BC/Leltar2/service-worker.js) fájlt átírtuk **Network-First** működésűre.
-- Ha van internetkapcsolatod, a böngésző **mindig lekéri a legfrissebb kódokat a szerverről** (akár a helyi szerverről, akár a GitHub Pagesről), és a háttérben felülírja a korábbi mentéseket.
-- Ha nincs hálózat (offline vagy gyenge a térerő), az alkalmazás azonnal a helyben tárolt cache-ből tölt be, így az offline működés továbbra is 100%-os.
+2. **Mobilbarát GUI (Nagyobb betűméretek és gombok):**
+   - **Taller Inputs & Buttons:** A gombok és beviteli mezők magasságát fixen **54px**-re növeltük. Ez megkönnyíti a gyors érintést (tap target) a telefonokon, kiküszöbölve a félrenyomásokat.
+   - **Scaled Typography:** Az összes szöveges elem betűméretét megemeltük:
+     - Input mezők betűmérete: `1.15rem` (~18px).
+     - Gombok betűmérete: `1.1rem` (~17px).
+     - Megerősítendő kódok kiemelése a modálokban: `1.6rem` bold (~25px).
+     - Kamera alatti utasítások: `1.05rem` (~16px), félkövér, kontrasztos fehér színben.
+   - **Expanded Bottom Bars:** Az alsó navigációs sáv magasságát **80px**-re növeltük, így az ikonok (`1.5rem`) and a feliratok is nagyobbak lettek. Az alsó státuszsáv magasságát és betűméretét szintén megemeltük.
+   - **Optimized Aspect Ratio:** A kamera detektáló keretének mérete (`85%` szélesség, `55%` magasság) továbbra is ideális a lineáris vonalkódok beolvasásához.
 
-### B. Automatikus Frissítés-Érzékelés és Oldalújratöltés
-Az [app.js](file:///d:/!dev/BC/Leltar2/app.js) mostantól automatikusan figyeli, ha új verzió jelenik meg a szerveren:
-1. Ha új Service Worker verziót észlel (mert módosítottad a kódot és feltoltad GitHub-ra), az alkalmazás a háttérben letölti az új fájlokat.
-2. Amint a letöltés befejeződött, a kód kényszeríti az új verzió aktiválását (`skipWaiting`).
-3. Az új verzió aktívvá válásakor az alkalmazás **automatikusan újratölti az oldalt** a háttérben (`window.location.reload()`).
-4. **Eredmény:** Felhasználóként nem kell semmit sem tenned; ha új verziót feltöltesz, a böngésző/telefon magától frissül a legújabb változatra a háttérben!
+3. **Megbízható Frissülés és Fejlesztés:**
+   - A [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat) segítségével indított helyi szerver teljesen kikapcsolja a gyorsítótárazást, így azonnal láthatóak a kódváltoztatások.
+   - A **Network-First** Service Worker és az **Auto-Update** modulnak köszönhetően a telefon és az asztali böngésző azonnal észleli, ha új verziót (pl. egy újabb push-t) töltesz fel a GitHub Pages-re, letölti a fájlokat, és **automatikusan újratölti az oldalt**, így azonnal a frissített felület jelenik meg.
 
 ---
 
-## 3. Beolvasási Munkafolyamat és Állapotgép
+## Útmutató: Alkalmazás Frissítése GitHub Pages Segítségével
 
-Az alkalmazás az alábbi iteratív beolvasást követi:
+Amikor új verziót push-olsz, az alábbi folyamat játszódik le:
 
-1. **Raktár kód beolvasása:** Első belépéskor a raktárkód beolvasása kötelező. Sikeres megerősítés után fixen kikerül a képernyő tetejére, és a `sessionStorage`-ben tárolódik (lap bezárásakor/újraindításakor törlődik).
-2. **Raktárhely beolvasása:** Megerősítő ablak kíséri. Elfogadás esetén továbbfejlődik a cikkszám beolvasásra.
-3. **Cikkszám beolvasása:** Megerősítő ablak kíséri. Elfogadás esetén megnyitja a mennyiség modal-t.
-4. **Mennyiség megadása:** A modalban látható a megerősített raktárhely és cikkszám. OK gombra ment az IndexedDB-be, majd a státusz-kártya törlődik és visszaugrik a Raktárhely beolvasására (új iteráció).
-5. **Alsó Státuszsáv:** Mutatja az adatbázisban tárolt összes rögzített tétel darabszámát.
+1. **Push Git-be:**
+   Futtasd a parancsokat a helyi mappában a `v1.02`-es kódok feltöltéséhez:
+   ```bash
+   git add .
+   git commit -m "Upgrade to Leltározás v1.02 with larger GUI"
+   git push origin main
+   ```
+2. **Szerveroldali frissülés:** A GitHub Pages 30-60 másodpercen belül frissíti a tárhelyet a háttérben.
+3. **Automatikus kliens frissülés:** A telefonodon vagy böngészőben megnyitott alkalmazás a háttérben azonnal észleli a `v1.02` verzióváltozást a Service Workeren keresztül, letölti a megváltozott stíluslapot és szkripteket, majd **magától újratölti az oldalt**, aktiválva a megnövelt méretű új felületet.

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'leltar2-cache-v3';
+const CACHE_NAME = 'leltarozas-cache-v1.02';
 const ASSETS = [
   './',
   './index.html',

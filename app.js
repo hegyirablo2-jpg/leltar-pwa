@@ -1,4 +1,5 @@
 // --- CONFIGURATION & GLOBAL STATE ---
+const APP_VERSION = '1.02';
 const DB_NAME = 'InventoryDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'scans';
@@ -564,6 +565,10 @@ function escapeJs(str) {
 
 // --- EVENT LISTENERS & INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
+  // Inject application version dynamically
+  document.getElementById('app-version').textContent = 'v' + APP_VERSION;
+  document.title = 'Leltározás v' + APP_VERSION;
+
   // Register Service Worker for PWA with auto-update reload
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')

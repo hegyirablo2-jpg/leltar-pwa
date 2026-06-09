@@ -1,34 +1,39 @@
-# Gyorsítótárazás és Helyi Szerver Megbízhatóságának Javítása
+# Alkalmazás Átnevezése, Verziókezelése és GUI Nagyobbítása
 
-A PWA (Progressive Web App) Service Worker cache-first stratégiája miatt a böngészők makacsul tárolták a régi fájlokat (HTML, CSS, JS), így sem a helyi szerver, sem a GitHub Pages módosításai nem jelentek meg azonnal.
-
-A probléma végleges és megbízható megoldására az alábbi változtatásokat vezetjük be.
+A felhasználó kérése alapján átnevezzük az alkalmazást „Leltározás”-ra, bevezetjük a kódból állítható verziószámot (jelenleg `1.02`), és áttervezzük a grafikus felületet (GUI) nagyobb betűméretekkel és gombokkal, hogy kis mobilképernyőkön is rendkívül könnyen olvasható és kezelhető legyen.
 
 ## Proposed Changes
 
-### 1. Új Helyi Szerver Indító [NEW] [start-server.bat](file:///d:/!dev/BC/Leltar2/start-server.bat)
-- Létrehozunk egy egyszerűen kattintható Windows parancsfájlt a projekt gyökerében.
-- A szervert az `npx http-server -c-1 -p 8080` paranccsal indítja. A `-c-1` kapcsoló teljesen letiltja a HTTP gyorsítótárazást (Cache-Control: no-cache), így a böngésző minden helyi kódváltoztatást azonnal letölt.
+### 1. Alkalmazás Név és Verzió Bevezetése [MODIFY]
+- **[index.html](file:///d:/!dev/BC/Leltar2/index.html)**:
+  - Cím átírása: `Leltározás`.
+  - Fejléc módosítása: `Leltározás` felirat, mellette egy dinamikus `#app-version` verziószámmal.
+  - Szöveges említések (pl. üres listák üzenetei) cseréje "Leltározás"-ra.
+- **[app.js](file:///d:/!dev/BC/Leltar2/app.js)**:
+  - Fájl elején konstansként definiáljuk a verziót: `const APP_VERSION = '1.02';`.
+  - Inicializáláskor dinamikusan beillesztjük a verziót a fejlécse és a dokumentum címébe.
+- **[manifest.json](file:///d:/!dev/BC/Leltar2/manifest.json)**:
+  - Nevét és rövid nevét átírjuk `Leltározás`-ra.
+- **[service-worker.js](file:///d:/!dev/BC/Leltar2/service-worker.js)**:
+  - Gyorsítótár nevét frissítjük a verzió alapján: `const CACHE_NAME = 'leltarozas-cache-v1.02';` (ez kényszeríti a telefonokat és a böngészőt a frissítésre).
 
-### 2. Caching Stratégia Módosítása [MODIFY] [service-worker.js](file:///d:/!dev/BC/Leltar2/service-worker.js)
-- Átállunk **Cache-First** stratégiáról **Network-First** (Hálózat-Első) stratégiára.
-- **Működése:** Ha van internet/hálózati kapcsolat, a böngésző mindig a legújabb fájlokat tölti le a szerverről (így a GitHub Pages frissítései azonnal látszódnak), és elmenti őket a cache-be. Ha nincs hálózat (offline), akkor a korábban mentett cache-ből tölt be.
-- Hozzáadunk egy `message` eseménykezelőt a `skipWaiting()` kényszerítésére, amikor új verzió érhető el.
+### 2. GUI Áttervezése Nagy Betűméretekhez [MODIFY] [styles.css](file:///d:/!dev/BC/Leltar2/styles.css)
+- **Alapméretek növelése**: A globális betűméretet és az elrendezést úgy módosítjuk, hogy kényelmes legyen a kis képernyőkön:
+  - Input mezők (beviteli mezők): betűméret növelése `1.15rem`-re (`~18px`), belső margók (padding) növelése `14px 16px`-ra, magasságuk `52px` felett.
+  - Gombok: betűméret `1.1rem`-re (`~17px`), magasságuk `52px` felett, hogy nagy ujjakkal is könnyű legyen rányomni.
+  - Kamera alatti utasítások betűmérete: `1.05rem`-re (`~16px`) növelve.
+  - A megerősítő és mennyiség modálok szövegméreteit megemeljük, a megerősítendő kódok kiemelését (`.highlight-text`) még nagyobbra és kontrasztosabbra vesszük (`1.6rem`).
+  - Alsó státuszsáv: magasságát és betűméretét megemeljük a könnyű olvashatóság érdekében.
+  - Alsó navigáció: gombok ikonjainak és szövegének méretét megnöveljük, a kényelmes navigációért.
 
-### 3. Automatikus Frissítés-Érzékelés [MODIFY] [app.js](file:///d:/!dev/BC/Leltar2/app.js)
-- A Service Worker regisztráció során figyeljük az `updatefound` eseményt.
-- Ha új Service Worker verziót észlel az alkalmazás, küldünk egy `skipWaiting` üzenetet a háttérnek.
-- A `controllerchange` esemény meghívásakor (amikor az új Service Worker átveszi az irányítást) **automatikusan újratöltjük az oldalt** (`window.location.reload()`). Így a felhasználónak nem kell bezárnia az appot, a frissítés azonnal és automatikusan végbemegy a háttérben.
+### 3. Dokumentáció Frissítése [MODIFY]
+- **[walkthrough.md](file:///d:/!dev/BC/Leltar2/walkthrough.md)**: Frissítjük az alkalmazás nevét és verziószámát, valamint a nagyobb grafikus felülettel és a verzió kezelésével kapcsolatos leírásokat.
+- **[task.md](file:///d:/!dev/BC/Leltar2/task.md)**: Hozzáadjuk és nyomon követjük az átnevezés és a GUI áttervezés feladatait.
 
 ## Verification Plan
 
-### Helyi Szerver Teszt
-1. Elindítjuk az alkalmazást a `start-server.bat` fájllal.
-2. Megnyitjuk a `http://localhost:8080` oldalt.
-3. Végzünk egy apró szöveges módosítást az `index.html`-ben és elmentjük.
-4. Lefuttatunk egy sima frissítést (F5) a böngészőben. Ellenőrizzük, hogy a változás azonnal látható-e (a `-c-1` hatása).
-
-### GitHub Pages és Automatikus Frissülés Teszt
-1. Feltoljuk a módosításokat GitHubra.
-2. Visszalépünk az asztali böngészőbe.
-3. Amikor a GitHub Pages elkészül, a böngésző észleli a háttérben az új verziót, letölti azt, és automatikusan újratölti az oldalt az új funkciókkal.
+### Grafikus Teszt
+1. Megnyitjuk a helyi szervert (`http://localhost:8080`) asztali böngészőben, mobil nézetre váltunk (F12 -> Mobil emulátor, pl. iPhone SE vagy kis kijelzős Android méret).
+2. Ellenőrizzük, hogy a beviteli mezők és gombok méretei kényelmesen nagyok-e, nincs-e szöveg-összecsúszás.
+3. Megbizonyosodunk róla, hogy a fejlécben és a böngésző fülön helyesen jelenik-e meg a `Leltározás v1.02` felirat.
+4. Teszteljük a modálok (megerősítő modal, mennyiség modal) megjelenését, hogy a szövegek jól olvashatóak-e kis kijelzőn is.

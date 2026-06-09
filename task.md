@@ -1,7 +1,8 @@
-# Feladatok - Gyorsítótárazás és Szerver Megbízhatóságának Javítása
+# Feladatok - Átnevezés, verzió és GUI nagyítás
 
-- [x] Létrehozni a `start-server.bat` indítófájlt a gyökérben
-- [x] Módosítani a `service-worker.js`-t (Network-First stratégia, skipWaiting üzenet kezelése)
-- [x] Módosítani az `app.js`-t (SW updatefound és controllerchange újratöltő logika)
-- [x] Frissíteni a `walkthrough.md` fájlt az új frissítési és fejlesztési logikával
+- [x] Frissíteni az `index.html`-t (átnevezés Leltározásra, verziószám tároló `#app-version` elem hozzáadása a fejlécbe)
+- [x] Frissíteni a `styles.css`-t (betűméretek, magasságok, gombok és beviteli mezők skálázása a jobb mobil olvashatóságért)
+- [x] Frissíteni az `app.js`-t (verzió konstans definiálása és dinamikus beillesztése a felületre és dokumentum címbe)
+- [x] Frissíteni a `manifest.json` és `service-worker.js` fájlokat (PWA átnevezés és cache név `v1.02` verzióra)
+- [x] Frissíteni a `walkthrough.md` dokumentációt
 - [x] Működés verifikálása

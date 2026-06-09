@@ -1,16 +1,15 @@
-/* CSS Design System - Leltár2 */
+/* CSS Design System - Leltározás */
 
 :root {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #0b0f19;
   --card-bg: rgba(30, 41, 59, 0.7);
-  --card-border: rgba(255, 255, 255, 0.06);
-
+  --card-border: rgba(255, 255, 255, 0.08);
   
   --text-primary: #f8fafc;
-  --text-secondary: #a7b7d1;
-  --text-muted: #6b7a99;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   
   --primary: #10b981; /* Emerald green */
   --primary-hover: #059669;
@@ -92,19 +91,35 @@ body {
 }
 
 .logo-icon {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 
 .app-header h1 {
-  font-size: 1.55rem;
+  font-size: 1.35rem;
   font-weight: 700;
   background: linear-gradient(135deg, #34d399, #10b981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+}
+
+/* App version badge */
+.app-version {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+  -webkit-text-fill-color: var(--text-secondary); /* Override text gradient */
 }
 
 .status-badge {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 9999px;
@@ -117,11 +132,11 @@ body {
 .warehouse-bar {
   background-color: rgba(16, 185, 129, 0.08);
   border-bottom: 1px solid rgba(16, 185, 129, 0.15);
-  padding: 10px 20px;
+  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   z-index: 9;
   animation: slideDown 0.3s ease;
 }
@@ -134,11 +149,11 @@ body {
 .warehouse-bar strong {
   color: var(--primary);
   font-family: monospace;
-  font-size: 1.05rem;
-  margin-left: 6px;
+  font-size: 1.15rem;
+  margin-left: 8px;
   letter-spacing: 0.05em;
   background: rgba(16, 185, 129, 0.12);
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 4px;
 }
 
@@ -146,9 +161,9 @@ body {
   background: none;
   border: 1px solid rgba(16, 185, 129, 0.3);
   color: var(--primary);
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: var(--border-radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
@@ -169,7 +184,7 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  padding-bottom: 125px; /* Space for bottom nav AND status bar */
+  padding-bottom: 145px; /* Spacious bottom padding for nav and status bar */
 }
 
 /* View Sections */
@@ -207,7 +222,7 @@ body {
 }
 
 .scanner-header h3, .list-header h3 {
-  font-size: 1.2rem;
+  font-size: 1.15rem; /* Increased from 1.05rem */
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
@@ -245,10 +260,10 @@ body {
   color: #fff !important;
   border: none !important;
   border-radius: var(--border-radius-sm) !important;
-  padding: 8px 16px !important;
+  padding: 10px 20px !important;
   font-family: inherit !important;
-  font-size: 0.9rem !important;
-  font-weight: 500 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
   margin-top: 10px !important;
   box-shadow: 0 4px 12px var(--primary-glow) !important;
@@ -276,31 +291,32 @@ body {
 }
 
 .fallback-icon {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   margin-bottom: 12px;
 }
 
 .fallback-message p {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
 .fallback-message .fallback-sub {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
 
 .scanner-status {
   margin-top: 12px;
-  font-size: 0.85rem;
+  font-size: 1.05rem; /* Increased from 0.85rem for high readability */
   text-align: center;
-  color: var(--text-secondary);
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 8px;
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.04);
+  padding: 12px;
   border-radius: var(--border-radius-sm);
-  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  font-weight: 500;
 }
 
 /* Toggle Switch */
@@ -308,7 +324,7 @@ body {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
 }
 
@@ -319,8 +335,8 @@ body {
 .slider {
   position: relative;
   display: inline-block;
-  width: 38px;
-  height: 20px;
+  width: 44px; /* Slightly larger */
+  height: 24px;
   background-color: var(--secondary);
   border-radius: 9999px;
   transition: var(--transition-normal);
@@ -329,8 +345,8 @@ body {
 .slider:before {
   position: absolute;
   content: "";
-  height: 14px;
-  width: 14px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: white;
@@ -343,12 +359,12 @@ body {
 }
 
 .toggle-switch input:checked + .slider:before {
-  transform: translateX(18px);
+  transform: translateX(20px);
 }
 
 .toggle-label {
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.95rem; /* Increased from 0.8rem */
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -360,15 +376,15 @@ body {
 
 /* Forms */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .form-group label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Increased from 0.85rem */
   font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -378,11 +394,12 @@ body {
   background-color: rgba(15, 23, 42, 0.6);
   border: 1px solid var(--card-border);
   border-radius: var(--border-radius-sm);
-  padding: 12px 14px;
+  padding: 14px 16px; /* Increased from 12px 14px */
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.15rem; /* Increased from 1rem for mobile typing */
   transition: var(--transition-fast);
+  height: 54px; /* Taller fields for fat fingers */
 }
 
 .form-control:focus {
@@ -394,7 +411,7 @@ body {
 
 .input-with-button {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .input-with-button .form-control {
@@ -406,14 +423,15 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px;
+  padding: 14px 24px; /* Increased padding */
   border-radius: var(--border-radius-sm);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.1rem; /* Increased from 0.95rem for readability */
   font-weight: 600;
   border: none;
   cursor: pointer;
   transition: var(--transition-fast);
+  height: 54px; /* Taller buttons matching inputs */
 }
 
 .btn:active {
@@ -452,29 +470,29 @@ body {
 }
 
 .btn-sm {
-  padding: 8px 12px;
-  font-size: 0.8rem;
-  border-radius: var(--border-radius-sm);
+  padding: 8px 16px;
+  font-size: 0.9rem; /* Increased from 0.8rem */
+  height: 40px; /* Taller but still small button */
 }
 
 /* Bottom Status Bar */
 .status-bar {
   width: 100%;
-  background-color: rgba(15, 23, 42, 0.95);
+  background-color: rgba(15, 23, 42, 0.96);
   border-top: 1px solid var(--card-border);
-  padding: 10px 20px;
-  font-size: 0.95rem;
+  padding: 12px 20px; /* Increased height */
+  font-size: 0.95rem; /* Increased from 0.85rem */
   color: var(--text-secondary);
   text-align: center;
   z-index: 9;
   position: absolute;
-  bottom: 72px; /* Placed exactly above bottom navigation */
+  bottom: 80px; /* Shifted up for larger bottom nav */
   backdrop-filter: blur(12px);
 }
 
 .status-bar strong {
   color: var(--primary);
-  font-size: 0.95rem;
+  font-size: 1.05rem; /* Large counters */
   font-weight: 700;
 }
 
@@ -484,8 +502,8 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 72px;
-  background-color: rgba(15, 23, 42, 0.95);
+  height: 80px; /* Increased from 72px for comfortable tap area */
+  background-color: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--card-border);
   display: flex;
@@ -502,7 +520,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   padding: 8px 16px;
   border-radius: var(--border-radius-md);
@@ -515,12 +533,12 @@ body {
 }
 
 .nav-icon {
-  font-size: 1.35rem;
+  font-size: 1.5rem; /* Increased from 1.35rem */
 }
 
 .nav-text {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.85rem; /* Increased from 0.75rem */
+  font-weight: 600;
 }
 
 .nav-item.active {
@@ -533,7 +551,7 @@ body {
 
 /* Progress Card (Current Scan status details) */
 .progress-card h3 {
-  font-size: 1rem;
+  font-size: 0.9rem; /* Increased from 0.85rem */
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -551,21 +569,21 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 12px 16px; /* Increased padding */
   background-color: rgba(15, 23, 42, 0.4);
   border-radius: var(--border-radius-md);
   border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
 .progress-label {
-  font-size: 0.95rem;
+  font-size: 0.95rem; /* Increased from 0.85rem */
   color: var(--text-secondary);
   font-weight: 500;
 }
 
 .progress-value {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.1rem; /* Increased from 0.95rem */
+  font-weight: 700;
   font-family: monospace;
   color: var(--accent);
 }
@@ -575,11 +593,12 @@ body {
   font-weight: 400;
   font-style: italic;
   font-family: inherit;
+  font-size: 0.95rem;
 }
 
 /* List View styles */
 .list-stats {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-secondary);
   display: flex;
@@ -588,7 +607,7 @@ body {
 
 .list-stats span {
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: var(--border-radius-sm);
   border: 1px solid var(--card-border);
 }
@@ -597,7 +616,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 240px);
+  max-height: calc(100vh - 270px);
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -621,7 +640,7 @@ body {
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid var(--card-border);
   border-radius: var(--border-radius-md);
-  padding: 14px;
+  padding: 16px; /* Increased from 14px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -636,15 +655,15 @@ body {
 .scan-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .scan-loc {
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* Increased from 0.75rem */
   font-weight: 700;
   color: var(--accent);
   background-color: rgba(59, 130, 246, 0.1);
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 4px;
   width: fit-content;
   text-transform: uppercase;
@@ -652,14 +671,14 @@ body {
 }
 
 .scan-code {
-  font-size: 1.05rem;
+  font-size: 1.05rem; /* Increased from 0.95rem */
   font-weight: 600;
   color: var(--text-primary);
   font-family: monospace;
 }
 
 .scan-time {
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Increased from 0.7rem */
   color: var(--text-muted);
 }
 
@@ -670,7 +689,7 @@ body {
 }
 
 .scan-qty {
-  font-size: 1.45rem;
+  font-size: 1.4rem; /* Increased from 1.25rem */
   font-weight: 700;
   color: var(--primary);
   text-align: right;
@@ -678,13 +697,13 @@ body {
 
 .scan-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .btn-action {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 38px; /* Increased from 32px for comfortable mobile tapping */
+  height: 38px;
+  border-radius: 8px;
   border: 1px solid var(--card-border);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
@@ -692,7 +711,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 1.05rem; /* Increased from 0.85rem */
   transition: var(--transition-fast);
 }
 
@@ -724,19 +743,19 @@ body {
 }
 
 .empty-icon {
-  font-size: 3rem;
+  font-size: 3.5rem;
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
 .empty-list-message p {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .empty-list-message .empty-sub {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
@@ -792,15 +811,15 @@ body {
 }
 
 .modal-header h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.25rem; /* Increased from 1.05rem for high readability */
+  font-weight: 700;
 }
 
 .modal-close {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   cursor: pointer;
   padding: 4px;
   line-height: 1;
@@ -817,13 +836,13 @@ body {
 .modal-info {
   background-color: rgba(15, 23, 42, 0.4);
   border: 1px solid var(--card-border);
-  padding: 12px;
+  padding: 16px;
   border-radius: var(--border-radius-sm);
-  margin-bottom: 16px;
-  font-size: 0.9rem;
+  margin-bottom: 20px;
+  font-size: 1.05rem; /* Increased from 0.9rem */
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .modal-info span {
@@ -835,32 +854,32 @@ body {
 .confirm-message-box {
   background-color: rgba(15, 23, 42, 0.4);
   border: 1px solid var(--card-border);
-  padding: 20px;
+  padding: 24px; /* Increased spacing */
   border-radius: var(--border-radius-md);
   text-align: center;
   margin-bottom: 20px;
 }
 
 .confirm-message-box span {
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Increased from 0.8rem */
   color: var(--text-secondary);
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .highlight-text {
-  font-size: 1.45rem;
+  font-size: 1.6rem; /* Increased from 1.45rem for very large scan visualization */
   font-weight: 700;
   color: var(--primary);
   font-family: monospace;
   word-break: break-all;
   background: rgba(16, 185, 129, 0.08);
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
   border: 1px solid rgba(16, 185, 129, 0.15);
-  margin-top: 4px;
+  margin-top: 6px;
   display: inline-block;
 }
 
