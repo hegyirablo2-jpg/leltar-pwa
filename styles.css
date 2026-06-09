@@ -112,12 +112,63 @@ body {
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+/* Warehouse Bar (Fixed at top) */
+.warehouse-bar {
+  background-color: rgba(16, 185, 129, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  z-index: 9;
+  animation: slideDown 0.3s ease;
+}
+
+.warehouse-bar span {
+  display: flex;
+  align-items: center;
+}
+
+.warehouse-bar strong {
+  color: var(--primary);
+  font-family: monospace;
+  font-size: 1.05rem;
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.btn-reset-wh {
+  background: none;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--primary);
+  padding: 3px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-reset-wh:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 /* App Content Area */
 .app-content {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  padding-bottom: 90px; /* Space for bottom nav */
+  padding-bottom: 125px; /* Space for bottom nav AND status bar */
 }
 
 /* View Sections */
@@ -138,7 +189,7 @@ body {
 }
 
 /* Cards */
-.scanner-card, .form-card, .list-card {
+.scanner-card, .control-card, .progress-card, .list-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--border-radius-lg);
@@ -147,14 +198,14 @@ body {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.scanner-header, .form-header, .list-header {
+.scanner-header, .control-header, .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.scanner-header h3, .form-header h3, .list-header h3 {
+.scanner-header h3, .list-header h3 {
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
@@ -185,7 +236,7 @@ body {
 
 /* Custom overlay within reader */
 #reader img {
-  display: none !important; /* Hide html5-qrcode standard logo/scan button */
+  display: none !important; /* Hide html5-qrcode standard logo */
 }
 
 #reader button {
@@ -300,6 +351,12 @@ body {
   color: var(--text-secondary);
 }
 
+/* Manual Scan container */
+.manual-scan-box {
+  margin-top: 12px;
+  animation: fadeInFast var(--transition-fast);
+}
+
 /* Forms */
 .form-group {
   margin-bottom: 16px;
@@ -332,13 +389,6 @@ body {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
   background-color: rgba(15, 23, 42, 0.8);
-}
-
-.form-control[readonly] {
-  background-color: rgba(15, 23, 42, 0.3);
-  color: var(--text-secondary);
-  cursor: not-allowed;
-  border-color: rgba(255, 255, 255, 0.03);
 }
 
 .input-with-button {
@@ -389,9 +439,9 @@ body {
 }
 
 .btn-danger {
-  background-color: rgba(239, 68, 68, 0.15);
+  background-color: rgba(239, 68, 68, 0.12);
   color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .btn-danger:hover {
@@ -406,27 +456,25 @@ body {
   border-radius: var(--border-radius-sm);
 }
 
-.btn-icon {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--card-border);
+/* Bottom Status Bar */
+.status-bar {
+  width: 100%;
+  background-color: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid var(--card-border);
+  padding: 10px 20px;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border-radius: var(--border-radius-sm);
-  font-size: 1.1rem;
+  text-align: center;
+  z-index: 9;
+  position: absolute;
+  bottom: 72px; /* Placed exactly above bottom navigation */
+  backdrop-filter: blur(12px);
 }
 
-.btn-icon:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-}
-
-.form-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 24px;
+.status-bar strong {
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 /* Bottom Navigation */
@@ -436,7 +484,7 @@ body {
   left: 0;
   width: 100%;
   height: 72px;
-  background-color: rgba(15, 23, 42, 0.9);
+  background-color: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--card-border);
   display: flex;
@@ -482,6 +530,52 @@ body {
   filter: drop-shadow(0 0 4px var(--primary-glow));
 }
 
+/* Progress Card (Current Scan status details) */
+.progress-card h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.progress-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background-color: rgba(15, 23, 42, 0.4);
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.progress-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: monospace;
+  color: var(--accent);
+}
+
+.progress-value.empty {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-style: italic;
+  font-family: inherit;
+}
+
 /* List View styles */
 .list-stats {
   font-size: 0.8rem;
@@ -502,7 +596,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 240px);
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -653,7 +747,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(15, 23, 42, 0.75);
+  background-color: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
@@ -664,7 +758,7 @@ body {
 }
 
 .modal-overlay.hidden {
-  display: none;
+  display: none !important;
 }
 
 @keyframes fadeInFast {
@@ -733,6 +827,40 @@ body {
 
 .modal-info span {
   font-family: monospace;
+  font-weight: 600;
+}
+
+/* Confirm modal box styling */
+.confirm-message-box {
+  background-color: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--card-border);
+  padding: 20px;
+  border-radius: var(--border-radius-md);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.confirm-message-box span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.highlight-text {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: monospace;
+  word-break: break-all;
+  background: rgba(16, 185, 129, 0.08);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  margin-top: 4px;
+  display: inline-block;
 }
 
 .modal-actions {

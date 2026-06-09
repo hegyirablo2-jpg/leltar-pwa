@@ -7,6 +7,23 @@ let db = null;
 let html5QrCode = null;
 let isCameraRunning = false;
 
+// Scan States
+const STATES = {
+  SCAN_WAREHOUSE: 'SCAN_WAREHOUSE',
+  SCAN_LOCATION: 'SCAN_LOCATION',
+  SCAN_ITEM: 'SCAN_ITEM',
+  ENTER_QUANTITY: 'ENTER_QUANTITY'
+};
+
+let currentState = STATES.SCAN_WAREHOUSE;
+let warehouseCode = null;
+let currentLocation = null;
+let currentItem = null;
+
+// Modal Freeze Flag
+let isConfirming = false;
+let confirmModalCallback = null;
+
 // Debounce state for scanning
 let lastScannedCode = null;
 let lastScannedTime = 0;
@@ -120,14 +137,12 @@ function triggerFeedback(type = 'success') {
     const now = ctx.currentTime;
 
     if (type === 'scan') {
-      // High frequency double beep
       osc.frequency.setValueAtTime(950, now);
       gainNode.gain.setValueAtTime(0.08, now);
       gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
       osc.start(now);
       osc.stop(now + 0.08);
     } else if (type === 'success') {
-      // Pleasant higher double-chime
       osc.frequency.setValueAtTime(880, now); // A5
       osc.frequency.setValueAtTime(1109, now + 0.08); // C#6
       gainNode.gain.setValueAtTime(0.1, now);
@@ -135,7 +150,6 @@ function triggerFeedback(type = 'success') {
       osc.start(now);
       osc.stop(now + 0.2);
     } else if (type === 'error') {
-      // Low buzz sound
       osc.frequency.setValueAtTime(180, now);
       gainNode.gain.setValueAtTime(0.2, now);
       gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
@@ -164,9 +178,10 @@ function startCamera() {
   const config = {
     fps: 10,
     qrbox: (width, height) => {
-      // Make qrbox proportional and responsive
-      const size = Math.min(width, height) * 0.7;
-      return { width: size, height: size * 0.6 };
+      // Larger barcode scanner frame: 85% width, adjusted height for linear barcodes
+      const boxWidth = Math.min(width, height) * 0.85;
+      const boxHeight = boxWidth * 0.55;
+      return { width: boxWidth, height: boxHeight };
     }
   };
 
@@ -191,9 +206,7 @@ function startCamera() {
     toggleBtn.classList.remove('btn-danger');
     toggleBtn.classList.add('btn-secondary');
     
-    // Show fallback if permissions are denied
     fallbackEl.classList.remove('hidden');
-    // Enable manual mode automatically if camera failed
     document.getElementById('manual-mode-checkbox').checked = true;
     toggleManualMode(true);
   });
@@ -215,6 +228,9 @@ function stopCamera() {
 
 // Handle scanned barcodes
 function onBarcodeScanned(decodedText, decodedResult) {
+  // If confirmation modal is open, freeze scanner inputs
+  if (isConfirming) return;
+
   const now = Date.now();
 
   // Debounce duplicate scans within 2 seconds
@@ -225,51 +241,140 @@ function onBarcodeScanned(decodedText, decodedResult) {
   lastScannedCode = decodedText;
   lastScannedTime = now;
 
+  handleCodeInput(decodedText);
+}
+
+// --- STATE MACHINE WORKFLOW LOGIC ---
+function setTransitionState(state) {
+  currentState = state;
+  const instructionEl = document.getElementById('scan-instruction');
+  const titleEl = document.getElementById('scanner-title');
+  const manualInput = document.getElementById('manual-scan-input');
+  
+  if (manualInput) {
+    manualInput.value = '';
+  }
+
+  switch (state) {
+    case STATES.SCAN_WAREHOUSE:
+      titleEl.textContent = 'Raktár kód beolvasása';
+      instructionEl.textContent = 'Olvassa be a raktár kódját a kezdéshez...';
+      if (manualInput) manualInput.placeholder = 'Raktár kód beírása...';
+      break;
+    case STATES.SCAN_LOCATION:
+      titleEl.textContent = 'Raktárhely beolvasása';
+      instructionEl.textContent = 'Olvassa be a raktárhely vonalkódját...';
+      if (manualInput) manualInput.placeholder = 'Raktárhely kód beírása...';
+      break;
+    case STATES.SCAN_ITEM:
+      titleEl.textContent = 'Cikkszám beolvasása';
+      instructionEl.textContent = 'Olvassa be a termék/cikkszám vonalkódját...';
+      if (manualInput) manualInput.placeholder = 'Cikkszám / Termékkód beírása...';
+      break;
+    case STATES.ENTER_QUANTITY:
+      titleEl.textContent = 'Mennyiség megadása';
+      instructionEl.textContent = 'Adja meg a mennyiséget a felugró ablakban...';
+      break;
+  }
+}
+
+function handleCodeInput(code) {
+  if (!code) return;
+  
   triggerFeedback('scan');
 
-  const locInput = document.getElementById('location-code');
-  const itemInput = document.getElementById('item-code');
-  const qtyInput = document.getElementById('quantity');
-  const instructionEl = document.getElementById('scan-instruction');
-
-  if (!locInput.value) {
-    // 1. Fill location
-    locInput.value = decodedText;
-    instructionEl.textContent = 'Olvassa be a termék vonalkódját...';
-  } else if (!itemInput.value) {
-    // 2. Fill item code
-    itemInput.value = decodedText;
-    instructionEl.textContent = 'Adja meg a mennyiséget és mentse el!';
-    // Auto-focus quantity field
-    qtyInput.focus();
-  } else {
-    // Both filled, check if scanning same item or new item.
-    // For safety, overwrite product code with the new scan.
-    itemInput.value = decodedText;
-    qtyInput.focus();
+  if (currentState === STATES.SCAN_WAREHOUSE) {
+    openConfirmModal('Raktár kód megerősítése', 'Raktár kód:', code, () => {
+      warehouseCode = code;
+      sessionStorage.setItem('warehouseCode', warehouseCode);
+      showWarehouseBar(warehouseCode);
+      setTransitionState(STATES.SCAN_LOCATION);
+    });
+  } else if (currentState === STATES.SCAN_LOCATION) {
+    openConfirmModal('Raktárhely megerősítése', 'Raktárhely kód:', code, () => {
+      currentLocation = code;
+      const progressLoc = document.getElementById('progress-location');
+      progressLoc.textContent = currentLocation;
+      progressLoc.classList.remove('empty');
+      setTransitionState(STATES.SCAN_ITEM);
+    });
+  } else if (currentState === STATES.SCAN_ITEM) {
+    openConfirmModal('Cikkszám megerősítése', 'Termékkód / Cikkszám:', code, () => {
+      currentItem = code;
+      const progressItem = document.getElementById('progress-item');
+      progressItem.textContent = currentItem;
+      progressItem.classList.remove('empty');
+      
+      setTransitionState(STATES.ENTER_QUANTITY);
+      openQuantityModal();
+    });
   }
+}
+
+// Confirm Modal Controllers
+function openConfirmModal(title, typeLabel, value, onOkCallback) {
+  isConfirming = true;
+  document.getElementById('confirm-modal-title').textContent = title;
+  document.getElementById('confirm-modal-type-label').textContent = typeLabel;
+  document.getElementById('confirm-modal-value').textContent = value;
+  
+  confirmModalCallback = onOkCallback;
+  document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.add('hidden');
+  isConfirming = false;
+  confirmModalCallback = null;
+  lastScannedCode = null; // Clear debounce state on close
+}
+
+// Quantity Modal Controllers
+function openQuantityModal() {
+  document.getElementById('qty-modal-location').textContent = currentLocation;
+  document.getElementById('qty-modal-item').textContent = currentItem;
+  document.getElementById('qty-modal-input').value = '';
+  document.getElementById('quantity-modal').classList.remove('hidden');
+  document.getElementById('qty-modal-input').focus();
+}
+
+function closeQuantityModal(cancelled = false) {
+  document.getElementById('quantity-modal').classList.add('hidden');
+  
+  if (cancelled) {
+    // If quantity is cancelled, only discard the item code, keep location
+    currentItem = null;
+    const progressItem = document.getElementById('progress-item');
+    progressItem.textContent = 'Nincs beolvasva';
+    progressItem.classList.add('empty');
+    setTransitionState(STATES.SCAN_ITEM);
+  }
+  lastScannedCode = null;
+}
+
+// Warehouse Bar Control
+function showWarehouseBar(code) {
+  document.getElementById('warehouse-value').textContent = code;
+  document.getElementById('warehouse-display-bar').classList.remove('hidden');
+}
+
+function hideWarehouseBar() {
+  document.getElementById('warehouse-display-bar').classList.add('hidden');
 }
 
 // Toggle manual typing mode
 function toggleManualMode(enabled) {
-  const locInput = document.getElementById('location-code');
-  const itemInput = document.getElementById('item-code');
-  const instructionEl = document.getElementById('scan-instruction');
+  const manualContainer = document.getElementById('manual-scan-container');
+  const inputEl = document.getElementById('manual-scan-input');
 
   if (enabled) {
-    locInput.removeAttribute('readonly');
-    itemInput.removeAttribute('readonly');
-    instructionEl.textContent = 'Kézi adatbevitel aktív. Írja be a kódokat.';
+    manualContainer.classList.remove('hidden');
     stopCamera();
+    inputEl.focus();
   } else {
-    locInput.setAttribute('readonly', 'true');
-    itemInput.setAttribute('readonly', 'true');
-    
-    // Set appropriate text
-    if (!locInput.value) {
-      instructionEl.textContent = 'Olvassa be a raktárhely vonalkódját...';
-    } else {
-      instructionEl.textContent = 'Olvassa be a termék vonalkódját...';
+    manualContainer.classList.add('hidden');
+    if (html5QrCode) {
+      startCamera();
     }
   }
 }
@@ -284,6 +389,14 @@ function switchView(viewName) {
   // Stop camera if leaving scan view
   if (viewName !== 'scan') {
     stopCamera();
+  } else {
+    // If returning to scan view and camera toggle was active, restart camera
+    if (!document.getElementById('manual-mode-checkbox').checked && !isCameraRunning) {
+      // Only auto-restart if we have instantiated scanner before
+      if (html5QrCode) {
+        startCamera();
+      }
+    }
   }
 
   if (viewName === 'scan') {
@@ -343,7 +456,10 @@ async function renderScansList() {
       htmlContent += `
         <div class="scan-item" data-id="${scan.id}">
           <div class="scan-info">
-            <span class="scan-loc">${escapeHtml(scan.locationCode)}</span>
+            <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+              ${scan.warehouseCode ? `<span class="scan-loc" style="background-color:rgba(16, 185, 129, 0.1); color:var(--primary); border:1px solid rgba(16, 185, 129, 0.15);">${escapeHtml(scan.warehouseCode)}</span>` : ''}
+              <span class="scan-loc">${escapeHtml(scan.locationCode)}</span>
+            </div>
             <span class="scan-code">${escapeHtml(scan.itemCode)}</span>
             <span class="scan-time">${formatDateTime(scan.timestamp)}</span>
           </div>
@@ -360,7 +476,7 @@ async function renderScansList() {
 
     scansListContainer.innerHTML = htmlContent;
     totalScansBadge.textContent = `${scans.length} db tétel`;
-    totalQtyBadge.textContent = `Össz: ${Number(totalQty.toFixed(4))}`; // Format float accurately
+    totalQtyBadge.textContent = `Össz: ${Number(totalQty.toFixed(4))}`;
   } catch (error) {
     console.error(error);
     scansListContainer.innerHTML = `<div class="error-text">Hiba történt a tételek betöltésekor.</div>`;
@@ -374,6 +490,7 @@ async function handleDeleteScan(id) {
       await deleteScanFromDB(id);
       triggerFeedback('success');
       renderScansList();
+      updateStatusBarCount();
     } catch (err) {
       alert(err);
       triggerFeedback('error');
@@ -381,7 +498,7 @@ async function handleDeleteScan(id) {
   }
 }
 
-// Edit Modal helpers
+// Edit Modal helpers (For List View)
 function openEditModal(id, location, item, quantity) {
   document.getElementById('modal-scan-id').value = id;
   document.getElementById('modal-info-location').textContent = location;
@@ -393,6 +510,38 @@ function openEditModal(id, location, item, quantity) {
 
 function closeEditModal() {
   document.getElementById('edit-modal').classList.add('hidden');
+}
+
+// Update bottom status bar counter
+async function updateStatusBarCount() {
+  try {
+    const scans = await getAllScansFromDB();
+    document.getElementById('status-total-count').textContent = scans.length;
+  } catch (e) {
+    console.error('Failed to query counts:', e);
+  }
+}
+
+// Reset scan state machine variables
+function resetScanCycle() {
+  currentLocation = null;
+  currentItem = null;
+  
+  const progressLoc = document.getElementById('progress-location');
+  const progressItem = document.getElementById('progress-item');
+  
+  progressLoc.textContent = 'Nincs beolvasva';
+  progressLoc.classList.add('empty');
+  progressItem.textContent = 'Nincs beolvasva';
+  progressItem.classList.add('empty');
+  
+  lastScannedCode = null;
+
+  if (warehouseCode) {
+    setTransitionState(STATES.SCAN_LOCATION);
+  } else {
+    setTransitionState(STATES.SCAN_WAREHOUSE);
+  }
 }
 
 // Helper to escape HTML tags
@@ -421,11 +570,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       .catch((err) => console.error('Service Worker registration error:', err));
   }
 
-  // 1. Initialize IndexedDB
+  // 1. Initialize IndexedDB and load counts
   try {
     await openDB();
+    updateStatusBarCount();
   } catch (err) {
     alert('Adatbázis hiba: ' + err);
+  }
+
+  // Check if warehouse code exists in sessionStorage (keeps state during session)
+  const storedWh = sessionStorage.getItem('warehouseCode');
+  if (storedWh) {
+    warehouseCode = storedWh;
+    showWarehouseBar(warehouseCode);
+    setTransitionState(STATES.SCAN_LOCATION);
+  } else {
+    setTransitionState(STATES.SCAN_WAREHOUSE);
   }
 
   // 2. Navigation Switch
@@ -437,7 +597,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isCameraRunning) {
       stopCamera();
     } else {
-      // Ensure manual checkbox is unchecked when user starts camera
       document.getElementById('manual-mode-checkbox').checked = false;
       toggleManualMode(false);
       startCamera();
@@ -450,44 +609,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleManualMode(e.target.checked);
   });
 
-  // 5. Individual field clears
-  document.getElementById('clear-location-btn').addEventListener('click', () => {
-    document.getElementById('location-code').value = '';
-    const instructionEl = document.getElementById('scan-instruction');
-    if (!document.getElementById('manual-mode-checkbox').checked) {
-      instructionEl.textContent = 'Olvassa be a raktárhely vonalkódját...';
+  // 5. Manual Input Box Handlers
+  const manualInput = document.getElementById('manual-scan-input');
+  const manualSubmit = document.getElementById('manual-scan-submit-btn');
+
+  const processManualInput = () => {
+    const value = manualInput.value.trim();
+    if (value) {
+      handleCodeInput(value);
+      manualInput.value = '';
+    }
+  };
+
+  manualSubmit.addEventListener('click', processManualInput);
+  manualInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      processManualInput();
     }
   });
 
-  document.getElementById('clear-item-btn').addEventListener('click', () => {
-    document.getElementById('item-code').value = '';
-    const instructionEl = document.getElementById('scan-instruction');
-    const locValue = document.getElementById('location-code').value;
-    if (!document.getElementById('manual-mode-checkbox').checked) {
-      if (locValue) {
-        instructionEl.textContent = 'Olvassa be a termék vonalkódját...';
-      } else {
-        instructionEl.textContent = 'Olvassa be a raktárhely vonalkódját...';
-      }
+  // 6. Confirm Modal Button Listeners
+  document.getElementById('confirm-modal-ok-btn').addEventListener('click', () => {
+    if (confirmModalCallback) {
+      confirmModalCallback();
     }
+    closeConfirmModal();
   });
 
-  // 6. Form Submission (Save)
-  const scanForm = document.getElementById('scan-form');
-  scanForm.addEventListener('submit', async (e) => {
+  document.getElementById('confirm-modal-cancel-btn').addEventListener('click', () => {
+    closeConfirmModal();
+  });
+
+  // 7. Quantity Modal Form Submission
+  const quantityForm = document.getElementById('quantity-form');
+  quantityForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const locationCode = document.getElementById('location-code').value.trim();
-    const itemCode = document.getElementById('item-code').value.trim();
-    const quantityStr = document.getElementById('quantity').value.trim();
-
-    if (!locationCode || !itemCode || !quantityStr) {
-      alert('Minden mező kitöltése kötelező!');
+    const quantityStr = document.getElementById('qty-modal-input').value.trim();
+    if (!quantityStr) {
+      alert('Kérjük, adjon meg egy mennyiséget!');
       triggerFeedback('error');
       return;
     }
 
-    // Support Hungarian format (comma as decimal separator)
     const normalizedQty = quantityStr.replace(',', '.');
     const quantity = parseFloat(normalizedQty);
 
@@ -498,8 +663,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const scanRecord = {
-      locationCode,
-      itemCode,
+      warehouseCode,
+      locationCode: currentLocation,
+      itemCode: currentItem,
       quantity,
       timestamp: Date.now(),
       isSynced: false
@@ -508,45 +674,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await addScanToDB(scanRecord);
       triggerFeedback('success');
-
-      // Clear input fields according to specifications:
-      // Keep locationCode so the user can continue in the same storage spot.
-      document.getElementById('item-code').value = '';
-      document.getElementById('quantity').value = '';
-
-      // Update scan instruction
-      if (!manualCheckbox.checked) {
-        document.getElementById('scan-instruction').textContent = 'Olvassa be a termék vonalkódját...';
-      }
-      
-      // Clear last scanned code state to allow immediate re-scanning of the same product
-      lastScannedCode = null;
-      
+      closeQuantityModal(false); // successfully closed, not cancelled
+      resetScanCycle();          // reset location & item codes to start new loop
+      updateStatusBarCount();    // update bottom status bar
     } catch (err) {
       alert(err);
       triggerFeedback('error');
     }
   });
 
-  // 7. Reset Form button ("Új olvasás / Törlés")
-  document.getElementById('reset-scans-btn').addEventListener('click', () => {
-    document.getElementById('location-code').value = '';
-    document.getElementById('item-code').value = '';
-    document.getElementById('quantity').value = '';
-    
-    // Clear last scanned code state
-    lastScannedCode = null;
-
-    const instructionEl = document.getElementById('scan-instruction');
-    if (!manualCheckbox.checked) {
-      instructionEl.textContent = 'Olvassa be a raktárhely vonalkódját...';
-    } else {
-      instructionEl.textContent = 'Kézi adatbevitel aktív. Írja be a kódokat.';
-    }
-    triggerFeedback('scan');
+  document.getElementById('qty-modal-cancel-btn').addEventListener('click', () => {
+    closeQuantityModal(true); // cancelled
   });
 
-  // 8. Modal forms and buttons
+  // 8. General Reset Button on screen ("Újraindítás")
+  document.getElementById('reset-scans-btn').addEventListener('click', () => {
+    if (confirm('Biztosan szeretné újraindítani a jelenlegi beolvasási folyamatot?')) {
+      resetScanCycle();
+      triggerFeedback('scan');
+    }
+  });
+
+  // 9. Warehouse Reset ("Módosítás" button)
+  document.getElementById('reset-warehouse-btn').addEventListener('click', () => {
+    if (confirm('Biztosan szeretné módosítani a raktárkódot? (A jelenlegi beolvasás törlődik)')) {
+      sessionStorage.removeItem('warehouseCode');
+      warehouseCode = null;
+      hideWarehouseBar();
+      resetScanCycle();
+      triggerFeedback('scan');
+    }
+  });
+
+  // 10. Edit Modal form handlers (used in List View)
   document.getElementById('modal-close-btn').addEventListener('click', closeEditModal);
   document.getElementById('modal-cancel-btn').addEventListener('click', closeEditModal);
   
@@ -576,6 +736,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       triggerFeedback('success');
       closeEditModal();
       renderScansList();
+      updateStatusBarCount();
     } catch (err) {
       alert(err);
       triggerFeedback('error');

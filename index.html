@@ -34,16 +34,22 @@
       <div id="connection-status" class="status-badge status-online">Helyi mód</div>
     </header>
 
+    <!-- Warehouse Code Fixed Display Bar -->
+    <div id="warehouse-display-bar" class="warehouse-bar hidden">
+      <span>Raktár: <strong id="warehouse-value">-</strong></span>
+      <button id="reset-warehouse-btn" class="btn-reset-wh" title="Új raktár kód beolvasása">Módosítás</button>
+    </div>
+
     <!-- Main Content -->
     <main class="app-content">
       
       <!-- View 1: Scan and Input View -->
       <section id="scan-view" class="view-section active">
         
-        <!-- Scanner Area -->
+        <!-- Scanner Card -->
         <div class="scanner-card">
           <div class="scanner-header">
-            <h3>Kamera olvasó</h3>
+            <h3 id="scanner-title">Raktár kód beolvasása</h3>
             <button id="toggle-camera-btn" class="btn btn-secondary btn-sm">Kamera indítása</button>
           </div>
           
@@ -51,55 +57,51 @@
             <div id="reader"></div>
             <div id="reader-fallback" class="fallback-message hidden">
               <span class="fallback-icon">⚠️</span>
-              <p>A kamera nem elérhető vagy nincs engedélyezve.</p>
+              <p>A kamera nem érhető vagy nincs engedélyezve.</p>
               <p class="fallback-sub">Használd a kézi adatbevitelt alább.</p>
             </div>
           </div>
 
           <div class="scanner-status" id="scan-instruction">
-            Olvassa be a raktárhely vonalkódját...
+            Olvassa be a raktár kódját a kezdéshez...
           </div>
         </div>
 
-        <!-- Input Form -->
-        <div class="form-card">
-          <div class="form-header">
-            <h3>Adatbevitel</h3>
+        <!-- Manual Scan & Reset Card -->
+        <div class="control-card">
+          <div class="control-header">
             <label class="toggle-switch">
               <input type="checkbox" id="manual-mode-checkbox">
               <span class="slider"></span>
-              <span class="toggle-label">Kézi bevitel</span>
+              <span class="toggle-label">Kézi kódbeírás</span>
             </label>
+            <button type="button" id="reset-scans-btn" class="btn btn-danger btn-sm">Újraindítás</button>
           </div>
           
-          <form id="scan-form" autocomplete="off">
-            <div class="form-group">
-              <label for="location-code">Raktárhely</label>
-              <div class="input-with-button">
-                <input type="text" id="location-code" class="form-control" placeholder="Raktárhely kódja" readonly required>
-                <button type="button" id="clear-location-btn" class="btn btn-icon" title="Raktárhely törlése">✕</button>
-              </div>
+          <!-- Manual Input Form -->
+          <div id="manual-scan-container" class="manual-scan-box hidden">
+            <div class="input-with-button">
+              <input type="text" id="manual-scan-input" class="form-control" placeholder="Írja be a kódot és nyomjon Enter-t...">
+              <button type="button" id="manual-scan-submit-btn" class="btn btn-primary">OK</button>
             </div>
-
-            <div class="form-group">
-              <label for="item-code">Termékkód</label>
-              <div class="input-with-button">
-                <input type="text" id="item-code" class="form-control" placeholder="Termék kódja" readonly required>
-                <button type="button" id="clear-item-btn" class="btn btn-icon" title="Termékkód törlése">✕</button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="quantity">Mennyiség</label>
-              <input type="number" id="quantity" class="form-control" placeholder="0.00" step="any" inputmode="decimal" required>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="reset-scans-btn" class="btn btn-danger">Új olvasás / Törlés</button>
-              <button type="submit" id="save-btn" class="btn btn-primary">Mentés</button>
-            </div>
-          </form>
+          </div>
         </div>
+
+        <!-- Current Iteration Status (Lower part of screen) -->
+        <div class="progress-card">
+          <h3>Aktuális beolvasás állapot</h3>
+          <div class="progress-details">
+            <div class="progress-item">
+              <span class="progress-label">Raktárhely:</span>
+              <span id="progress-location" class="progress-value empty">Nincs beolvasva</span>
+            </div>
+            <div class="progress-item">
+              <span class="progress-label">Cikkszám:</span>
+              <span id="progress-item" class="progress-value empty">Nincs beolvasva</span>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       <!-- View 2: List View -->
@@ -115,7 +117,6 @@
           
           <!-- Scans List -->
           <div id="scans-list" class="scans-list">
-            <!-- Dynamically populated -->
             <div class="empty-list-message">
               <span class="empty-icon">📝</span>
               <p>Még nincs rögzített tétel.</p>
@@ -126,6 +127,11 @@
       </section>
 
     </main>
+
+    <!-- Bottom Status Bar -->
+    <div class="status-bar" id="status-bar">
+      <span>Beolvasott tételek száma: <strong id="status-total-count">0</strong> db</span>
+    </div>
 
     <!-- Bottom Navigation Bar -->
     <nav class="app-nav">
@@ -139,7 +145,51 @@
       </button>
     </nav>
     
-    <!-- Edit Quantity Modal -->
+    <!-- Universal Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="confirm-modal-title">Beolvasás megerősítése</h3>
+        </div>
+        <div class="modal-body">
+          <div class="confirm-message-box">
+            <span id="confirm-modal-type-label">Típus:</span>
+            <div id="confirm-modal-value" class="highlight-text">-</div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="confirm-modal-cancel-btn" class="btn btn-secondary">Mégse</button>
+            <button type="button" id="confirm-modal-ok-btn" class="btn btn-primary">Oké</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quantity Entry Modal -->
+    <div id="quantity-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Mennyiség megadása</h3>
+        </div>
+        <div class="modal-body">
+          <form id="quantity-form" autocomplete="off">
+            <div class="modal-info">
+              <p><strong>Raktárhely:</strong> <span id="qty-modal-location">-</span></p>
+              <p><strong>Termékkód/Cikkszám:</strong> <span id="qty-modal-item">-</span></p>
+            </div>
+            <div class="form-group">
+              <label for="qty-modal-input">Mennyiség</label>
+              <input type="number" id="qty-modal-input" class="form-control" placeholder="0.00" step="any" inputmode="decimal" required>
+            </div>
+            <div class="modal-actions">
+              <button type="button" id="qty-modal-cancel-btn" class="btn btn-secondary">Mégse</button>
+              <button type="submit" class="btn btn-primary">OK</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Quantity Modal (Used in List view) -->
     <div id="edit-modal" class="modal-overlay hidden">
       <div class="modal-content">
         <div class="modal-header">
