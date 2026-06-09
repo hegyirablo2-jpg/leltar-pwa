@@ -178,9 +178,10 @@ function startCamera() {
   const config = {
     fps: 10,
     qrbox: (width, height) => {
-      // Larger barcode scanner frame: 85% width, adjusted height for linear barcodes
-      const boxWidth = Math.min(width, height) * 0.85;
-      const boxHeight = boxWidth * 0.55;
+      // Maximalizált keret: a lehető legnagyobbra növeljük a kameraképen belül
+      // (barcode jelleghez igazítva a magasságot kismértékben kisebbre hagyjuk)
+      const boxWidth = Math.min(width, height) * 0.97;
+      const boxHeight = boxWidth * 0.62;
       return { width: boxWidth, height: boxHeight };
     }
   };

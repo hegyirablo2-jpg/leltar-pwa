@@ -1,12 +1,13 @@
 {
-  "name": "Leltár2 - Vonalkódos Leltározó",
-  "short_name": "Leltár2",
+  "name": "Leltározás" ,
+  "short_name": "Leltározás",
   "description": "Robusztus offline-first vonalkódos leltározó Progresszív Webalkalmazás (PWA)",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
+  "version": "1.01",
   "icons": [
     {
       "src": "icon.svg",
