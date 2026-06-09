@@ -1,5 +1,5 @@
 // --- CONFIGURATION & GLOBAL STATE ---
-const APP_VERSION = '1.05';
+const APP_VERSION = '1.06';
 const DB_NAME = 'InventoryDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'scans';
@@ -296,7 +296,7 @@ function handleCodeInput(code) {
     openConfirmModal('Raktárhely megerősítése', 'Raktárhely kód:', code, () => {
       currentLocation = code;
       const progressLoc = document.getElementById('progress-location');
-      progressLoc.textContent = currentLocation;
+      progressLoc.value = currentLocation || '';
       progressLoc.classList.remove('empty');
       setTransitionState(STATES.SCAN_ITEM);
     });
@@ -304,7 +304,7 @@ function handleCodeInput(code) {
     openConfirmModal('Cikkszám megerősítése', 'Termékkód / Cikkszám:', code, () => {
       currentItem = code;
       const progressItem = document.getElementById('progress-item');
-      progressItem.textContent = currentItem;
+      progressItem.value = currentItem || '';
       progressItem.classList.remove('empty');
       
       setTransitionState(STATES.ENTER_QUANTITY);
@@ -347,11 +347,24 @@ function closeQuantityModal(cancelled = false) {
     // If quantity is cancelled, only discard the item code, keep location
     currentItem = null;
     const progressItem = document.getElementById('progress-item');
-    progressItem.textContent = 'Nincs beolvasva';
+    progressItem.value = '';
     progressItem.classList.add('empty');
     setTransitionState(STATES.SCAN_ITEM);
   }
   lastScannedCode = null;
+  
+  // Focus item input if manual mode is enabled
+  if (document.getElementById('manual-mode-checkbox').checked) {
+    const progressLoc = document.getElementById('progress-location');
+    const progressItem = document.getElementById('progress-item');
+    if (!currentLocation) {
+      progressLoc.focus();
+      progressLoc.select();
+    } else {
+      progressItem.focus();
+      progressItem.select();
+    }
+  }
 }
 
 // Warehouse Bar Control
@@ -366,15 +379,25 @@ function hideWarehouseBar() {
 
 // Toggle manual typing mode
 function toggleManualMode(enabled) {
-  const manualContainer = document.getElementById('manual-scan-container');
-  const inputEl = document.getElementById('manual-scan-input');
+  const progressLoc = document.getElementById('progress-location');
+  const progressItem = document.getElementById('progress-item');
 
   if (enabled) {
-    manualContainer.classList.remove('hidden');
     stopCamera();
-    inputEl.focus();
+    progressLoc.removeAttribute('readonly');
+    progressItem.removeAttribute('readonly');
+    
+    // Focus appropriate input
+    if (!currentLocation) {
+      progressLoc.focus();
+      progressLoc.select();
+    } else {
+      progressItem.focus();
+      progressItem.select();
+    }
   } else {
-    manualContainer.classList.add('hidden');
+    progressLoc.setAttribute('readonly', 'true');
+    progressItem.setAttribute('readonly', 'true');
     if (html5QrCode) {
       startCamera();
     }
@@ -557,9 +580,9 @@ function resetScanCycle() {
   const progressLoc = document.getElementById('progress-location');
   const progressItem = document.getElementById('progress-item');
   
-  progressLoc.textContent = 'Nincs beolvasva';
+  progressLoc.value = '';
   progressLoc.classList.add('empty');
-  progressItem.textContent = 'Nincs beolvasva';
+  progressItem.value = '';
   progressItem.classList.add('empty');
   
   lastScannedCode = null;
@@ -671,23 +694,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleManualMode(e.target.checked);
   });
 
-  // 5. Manual Input Box Handlers
-  const manualInput = document.getElementById('manual-scan-input');
-  const manualSubmit = document.getElementById('manual-scan-submit-btn');
+  // 5. Manual Input Direct Editing Listeners
+  const progressLocInput = document.getElementById('progress-location');
+  const progressItemInput = document.getElementById('progress-item');
 
-  const processManualInput = () => {
-    const value = manualInput.value.trim();
-    if (value) {
-      handleCodeInput(value);
-      manualInput.value = '';
-    }
-  };
-
-  manualSubmit.addEventListener('click', processManualInput);
-  manualInput.addEventListener('keydown', (e) => {
+  progressLocInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      processManualInput();
+      const val = progressLocInput.value.trim();
+      if (val) {
+        currentLocation = val;
+        progressLocInput.classList.remove('empty');
+        setTransitionState(STATES.SCAN_ITEM);
+        progressItemInput.focus();
+        progressItemInput.select();
+      } else {
+        currentLocation = null;
+        progressLocInput.classList.add('empty');
+        setTransitionState(STATES.SCAN_LOCATION);
+      }
+    }
+  });
+
+  progressItemInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!currentLocation) {
+        alert('Kérjük, előbb adjon meg egy raktárhelyet!');
+        progressLocInput.focus();
+        return;
+      }
+      const val = progressItemInput.value.trim();
+      if (val) {
+        currentItem = val;
+        progressItemInput.classList.remove('empty');
+        setTransitionState(STATES.ENTER_QUANTITY);
+        openQuantityModal();
+      } else {
+        currentItem = null;
+        progressItemInput.classList.add('empty');
+        setTransitionState(STATES.SCAN_ITEM);
+      }
     }
   });
 
@@ -745,7 +792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Keep currentLocation, reset only currentItem
         currentItem = null;
         const progressItem = document.getElementById('progress-item');
-        progressItem.textContent = 'Nincs beolvasva';
+        progressItem.value = '';
         progressItem.classList.add('empty');
         lastScannedCode = null;
         setTransitionState(STATES.SCAN_ITEM);

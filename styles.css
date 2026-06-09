@@ -192,11 +192,12 @@ body {
   margin-top: auto;
 }
 
-.control-actions-vertical {
+.control-actions-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
 }
 
 
@@ -608,6 +609,40 @@ body {
   font-style: italic;
   font-family: inherit;
   font-size: 0.95rem;
+}
+
+.progress-input {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  text-align: right;
+  width: 60%;
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  outline: none;
+  padding: 4px 10px;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.progress-input:not([readonly]) {
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+}
+
+.progress-input:not([readonly]):focus {
+  border-color: var(--primary);
+  background-color: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.progress-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-style: italic;
+  font-family: inherit;
 }
 
 /* List View styles */

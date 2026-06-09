@@ -29,7 +29,7 @@
     <header class="app-header">
       <div class="logo-area">
         <span class="logo-icon">📊</span>
-        <h1>Leltározás <span id="app-version" class="app-version">v1.05</span></h1>
+        <h1>Leltározás <span id="app-version" class="app-version">v1.06</span></h1>
       </div>
       <div id="connection-status" class="status-badge status-online">Helyi mód</div>
     </header>
@@ -73,19 +73,19 @@
           <div class="progress-details">
             <div class="progress-item">
               <span class="progress-label">Raktárhely:</span>
-              <span id="progress-location" class="progress-value empty">Nincs beolvasva</span>
+              <input type="text" id="progress-location" class="progress-value progress-input empty" placeholder="Nincs beolvasva" readonly autocomplete="off">
             </div>
             <div class="progress-item">
               <span class="progress-label">Cikkszám:</span>
-              <span id="progress-item" class="progress-value empty">Nincs beolvasva</span>
+              <input type="text" id="progress-item" class="progress-value progress-input empty" placeholder="Nincs beolvasva" readonly autocomplete="off">
             </div>
           </div>
         </div>
 
         <!-- Manual Scan & Reset Card (At the bottom of the view) -->
         <div class="control-card control-card-manual">
-          <div class="control-header">
-            <div class="control-actions-vertical">
+          <div class="control-header" style="margin-bottom: 0;">
+            <div class="control-actions-row">
               <label class="toggle-switch">
                 <input type="checkbox" id="manual-mode-checkbox">
                 <span class="slider"></span>
@@ -99,14 +99,6 @@
               </label>
             </div>
             <button type="button" id="reset-scans-btn" class="btn btn-danger btn-sm">Újraindítás</button>
-          </div>
-          
-          <!-- Manual Input Form -->
-          <div id="manual-scan-container" class="manual-scan-box hidden">
-            <div class="input-with-button">
-              <input type="text" id="manual-scan-input" class="form-control" placeholder="Írja be a kódot és nyomjon Enter-t...">
-              <button type="button" id="manual-scan-submit-btn" class="btn btn-primary">OK</button>
-            </div>
           </div>
         </div>
 

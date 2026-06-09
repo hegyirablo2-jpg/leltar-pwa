@@ -7,7 +7,7 @@
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
-  "version": "1.05",
+  "version": "1.06",
   "icons": [
     {
       "src": "icon.svg",
